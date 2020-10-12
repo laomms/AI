@@ -159,6 +159,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BaiduAPI.vb" />
     <Compile Include="Config.vb" />
     <Compile Include="HttpHelper.vb" />
     <Compile Include="Main.vb" />
