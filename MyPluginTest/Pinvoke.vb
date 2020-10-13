@@ -9,10 +9,12 @@ Public Module Pinvoke
     Public PluginStatus As Boolean
     Public RobotQQ As String
     Public Baidu_APPID As String
-    Public Baidu_APPKey As String
+    Public Baidu_APPKEY As String
     Public Baidu_SecretKey As String
+    Public Baidu_APP_ID As String
+    Public Baidu_APP_KEY As String
     Public Tencent_APPID As String
-    Public Tencent_APPKey As String
+    Public Tencent_APPKEY As String
     Public Tencent_SecretId As String
     Public Tencent_SecretKey As String
     Public IniFilePath = Environment.CurrentDirectory + "\main\data\config\AI.ini"

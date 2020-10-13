@@ -1,12 +1,100 @@
-﻿Imports System.IO
+﻿Imports System.ComponentModel
+Imports System.IO
+Imports System.Net
+Imports System.Threading
 
 Public Class SilkHelp
+
+    Private Shared finished As Boolean = False
+
+    Public Shared Function GetByteFromamr(ByVal audio_url As String) As Byte()
+        If audio_url = "" Then Return Nothing
+        Dim rootdicpath As String = Environment.CurrentDirectory
+        Dim audioslik As String = rootdicpath & "\main\data\voice"
+        If Not Directory.Exists(audioslik) Then
+            Dim dic As DirectoryInfo = Directory.CreateDirectory(audioslik)
+        End If
+        If File.Exists(audioslik + "\temp_audio.mp3") Then
+            File.Delete(audioslik + "\temp_audio.mp3")
+        End If
+        If File.Exists(audioslik + "\temp_audio.silk") Then
+            File.Delete(audioslik + "\temp_audio.silk")
+        End If
+        If File.Exists(audioslik + "\temp_audio.pcm") Then
+            File.Delete(audioslik + "\temp_audio.pcm")
+        End If
+        Using client = New WebClient()
+            finished = False
+            client.Headers.Add("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0)")
+            AddHandler client.DownloadFileCompleted, AddressOf OnDownloadComplete
+            client.DownloadFileAsync(New System.Uri(audio_url), audioslik + "\temp_audio.amr")
+        End Using
+        Do Until finished = True
+            Thread.Sleep(1)
+        Loop
+        Return File.ReadAllBytes(audioslik + "\temp_audio.silk")
+    End Function
+    Private Shared Sub OnDownloadComplete(ByVal sender As Object, ByVal e As AsyncCompletedEventArgs)
+        If Not e.Cancelled AndAlso e.Error Is Nothing Then
+            finished = True
+        End If
+    End Sub
+    '1.转换silk到mp3：
+    'ffmpeg -i test.silk test.mp3
+    '2.转换silk到wav：
+    'ffmpeg  -i test.silk test.wav
+    '3.转换mp3到wav：
+    'ffmpeg -i test.mp3 -f wav test.wav
+
+    ''' <summary>
+    ''' Silk解码
+    ''' </summary>
+    ''' <param name="audio_url"></param>
+    ''' <returns></returns>
+    Public Shared Function UrlSilkDecoding(ByVal audio_url As String) As Byte()
+        If audio_url = "" Then Return Nothing
+        Dim rootdicpath As String = Environment.CurrentDirectory
+        Dim ffmpge As String = rootdicpath & "\main\corn\ffmpeg.exe"
+        Dim silkdecode As String = rootdicpath & "\main\corn\silkdecode.exe" '解码
+        Dim silkencode As String = rootdicpath & "\main\corn\silkencode.exe" '编码
+        Dim audioslik As String = rootdicpath & "\main\data\voice"
+        If Not Directory.Exists(audioslik) Then
+            Dim dic As DirectoryInfo = Directory.CreateDirectory(audioslik)
+        End If
+        If File.Exists(audioslik + "\temp_audio.silk") Then
+            File.Delete(audioslik + "\temp_audio.silk")
+        End If
+        If File.Exists(audioslik + "\temp_audio.mp3") Then
+            File.Delete(audioslik + "\temp_audio.mp3")
+        End If
+        If File.Exists(audioslik + "\temp_audio.pcm") Then
+            File.Delete(audioslik + "\temp_audio.pcm")
+        End If
+        Using client = New WebClient()
+            finished = False
+            client.Headers.Add("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0)")
+            AddHandler client.DownloadFileCompleted, AddressOf OnDownloadComplete
+            client.DownloadFileAsync(New System.Uri(audio_url), audioslik + "\temp_audio.silk")
+        End Using
+        Do Until finished = True
+            Thread.Sleep(1)
+        Loop
+        Dim audio_path = audioslik + "\temp_audio.silk"
+        If File.Exists(ffmpge) AndAlso File.Exists(silkdecode) AndAlso File.Exists(silkencode) Then
+            Dim name As String = audio_path.Substring(audio_path.LastIndexOf("\") + 1)
+            Dim tempname As String = audioslik & "\" & name.Substring(0, name.LastIndexOf("."))
+            Runcmd(silkdecode, $"""{audio_path}"" ""{tempname}.pcm""")  'silk转pcm:   silkdecode "name.silk" "name2.pcm"
+            Return GetByte($"{tempname}.pcm")
+        End If
+        Return Nothing
+    End Function
+
     ''' <summary>
     ''' Silk解码
     ''' </summary>
     ''' <param name="audio_path"></param>
     ''' <returns></returns>
-    Public Function SilkDecoding(ByVal audio_path As String) As Byte()
+    Public Shared Function SilkDecoding(ByVal audio_path As String) As Byte()
         If Not File.Exists(audio_path) Then
             Return Nothing
         End If
@@ -43,7 +131,7 @@ Public Class SilkHelp
     ''' </summary>
     ''' <param name="audio_path"></param>
     ''' <returns></returns>
-    Public Function SilkEncoding(ByVal audio_path As String) As Byte()
+    Public Shared Function SilkEncoding(ByVal audio_path As String) As Byte()
         If Not File.Exists(audio_path) Then
             Return Nothing
         End If
@@ -58,11 +146,9 @@ Public Class SilkHelp
                 Dim dic As DirectoryInfo = Directory.CreateDirectory(audioslik)
             End If
             Dim tempname As String = audioslik & "\" & name.Substring(0, name.LastIndexOf("."))
-            Dim arg As String = $"-y -i ""{name}"" -f s16le -ar 24000 -ac 1 ""{tempname}.pcm"""
-            'ffmpeg -y -i "1.mp3" -f s16le -ar 24000 -ac 1 "name.pcm"
+            Dim arg As String = $"-y -i ""{name}"" -f s16le -ar 24000 -ac 1 ""{tempname}.pcm"""    'ffmpeg -y -i "1.mp3" -f s16le -ar 24000 -ac 1 "name.pcm"
             Runcmd(ffmpge, arg)
-            'silkencode "name.pcm" "name.silk" -tencent
-            arg = $"""{tempname}.pcm"" ""{tempname}.silk"" -tencent"
+            arg = $"""{tempname}.pcm"" ""{tempname}.silk"" -tencent"    'silkencode "name.pcm" "name.silk" -tencent
             Runcmd(silkencode, arg)
             Return GetByte($"{tempname}.silk")
         End If
@@ -86,13 +172,23 @@ Public Class SilkHelp
     ''' </summary>
     ''' <param name="filename"></param>
     ''' <param name="arg"></param>
-    Private Sub Runcmd(ByVal filename As String, ByVal arg As String)
-        Dim p As New ProcessStartInfo()
-        p.FileName = filename
-        p.Arguments = arg
-        p.UseShellExecute = False
-        p.CreateNoWindow = True
-        Process.Start(p)
+    Private Shared Sub Runcmd(ByVal filename As String, ByVal arg As String)
+        Using p1 As New Process
+            p1.StartInfo.CreateNoWindow = True
+            'p1.StartInfo.Verb = "runas"
+            p1.StartInfo.FileName = filename
+            p1.StartInfo.Arguments = arg
+            p1.StartInfo.WindowStyle = ProcessWindowStyle.Hidden
+            p1.StartInfo.UseShellExecute = False
+            p1.StartInfo.RedirectStandardOutput = True
+            p1.Start()
+            p1.WaitForExit()
+            Dim output As String
+            Using streamreader As System.IO.StreamReader = p1.StandardOutput
+                output = streamreader.ReadToEnd()
+                Debug.Print(output)
+            End Using
+        End Using
     End Sub
 End Class
 

@@ -156,8 +156,10 @@ Public Class API
                 If Not System.IO.Directory.Exists(Environment.CurrentDirectory + "\main\data\config\") Then
                     System.IO.Directory.CreateDirectory(Environment.CurrentDirectory + "\main\data\config\")
                     WritePrivateProfileString("Baidu", "APPID", "12345", IniFilePath)
-                    WritePrivateProfileString("Baidu", "APPKey", "12345", IniFilePath)
+                    WritePrivateProfileString("Baidu", "APPKEY", "12345", IniFilePath)
                     WritePrivateProfileString("Baidu", "SecretKey", "12345", IniFilePath)
+                    WritePrivateProfileString("Baidu", "APP_ID", "12345", IniFilePath)
+                    WritePrivateProfileString("Baidu", "APP_KEY", "12345", IniFilePath)
                     WritePrivateProfileString("Tencent", "APPID", "12345", IniFilePath)
                     WritePrivateProfileString("Tencent", "APPKEY", "12345", IniFilePath)
                     WritePrivateProfileString("Tencent", "SecretId", "12345", IniFilePath)
@@ -165,8 +167,10 @@ Public Class API
                 Else
                     If Not File.Exists(IniFilePath) Then
                         WritePrivateProfileString("Baidu", "APPID", "12345", IniFilePath)
-                        WritePrivateProfileString("Baidu", "APPKey", "12345", IniFilePath)
+                        WritePrivateProfileString("Baidu", "APPKEY", "12345", IniFilePath)
                         WritePrivateProfileString("Baidu", "SecretKey", "12345", IniFilePath)
+                        WritePrivateProfileString("Baidu", "APP_ID", "12345", IniFilePath)
+                        WritePrivateProfileString("Baidu", "APP_KEY", "12345", IniFilePath)
                         WritePrivateProfileString("Tencent", "APPID", "12345", IniFilePath)
                         WritePrivateProfileString("Tencent", "APPKEY", "12345", IniFilePath)
                         WritePrivateProfileString("Tencent", "SecretId", "12345", IniFilePath)
@@ -181,10 +185,14 @@ Public Class API
                         For Each Key In KeysList
                             If Key.ToString.StartsWith("APPID") Then
                                 Baidu_APPID = Key.ToString.Replace("APPID=", "")
-                            ElseIf Key.ToString.StartsWith("APPKey") Then
-                                Baidu_APPKey = Key.ToString.Replace("APPKey=", "")
+                            ElseIf Key.ToString.StartsWith("APPKEY") Then
+                                Baidu_APPKEY = Key.ToString.Replace("APPKEY=", "")
                             ElseIf Key.ToString.StartsWith("SecretKey") Then
                                 Baidu_SecretKey = Key.ToString.Replace("SecretKey=", "")
+                            ElseIf Key.ToString.StartsWith("APP_ID") Then
+                                Baidu_APP_ID = Key.ToString.Replace("APP_ID=", "")
+                            ElseIf Key.ToString.StartsWith("APP_KEY") Then
+                                Baidu_APP_KEY = Key.ToString.Replace("APP_KEY=", "")
                             End If
                         Next
                     ElseIf Section = "Tencent" Then
@@ -193,7 +201,7 @@ Public Class API
                             If Key.ToString.StartsWith("APPID") Then
                                 Tencent_APPID = Key.ToString.Replace("APPID=", "")
                             ElseIf Key.ToString.StartsWith("APPKEY") Then
-                                Tencent_APPKey = Key.ToString.Replace("APPKEY=", "")
+                                Tencent_APPKEY = Key.ToString.Replace("APPKEY=", "")
                             ElseIf Key.ToString.StartsWith("SecretId") Then
                                 Tencent_SecretId = Key.ToString.Replace("SecretId=", "")
                             ElseIf Key.ToString.StartsWith("SecretKey") Then
@@ -701,7 +709,7 @@ Public Class API
     ' 上传群语音
     Public Shared UploadGroupAudio As UploadGroupAudioDelegate = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
-    Public Delegate Function UploadGroupAudioDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal friendQQ As Long, ByVal audio_type As Integer, <MarshalAs(UnmanagedType.LPStr)> ByVal audio_text As String, <MarshalAs(UnmanagedType.LPArray)> ByVal audio() As Byte, ByVal audiosize As Integer) As IntPtr
+    Public Delegate Function UploadGroupAudioDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal groupQQ As Long, ByVal audio_type As Integer, <MarshalAs(UnmanagedType.LPStr)> ByVal audio_text As String, <MarshalAs(UnmanagedType.LPArray)> ByVal audio() As Byte, ByVal audiosize As Integer) As IntPtr
     ' 保存文件到微云
     Public Shared SaveFileToWeiYun As SaveFileToWeiYunDelegate = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>

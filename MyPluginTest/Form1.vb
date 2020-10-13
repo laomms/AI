@@ -17,10 +17,14 @@ Public Class Form1
                     For Each Key In KeysList
                         If Key.ToString.StartsWith("APPID") Then
                             TextBox1.Text = Key.ToString.Replace("APPID=", "")
-                        ElseIf Key.ToString.StartsWith("APPKey") Then
-                            TextBox2.Text = Key.ToString.Replace("APPKey=", "")
+                        ElseIf Key.ToString.StartsWith("APPKEY") Then
+                            TextBox2.Text = Key.ToString.Replace("APPKEY=", "")
                         ElseIf Key.ToString.StartsWith("SecretKey") Then
                             TextBox3.Text = Key.ToString.Replace("SecretKey=", "")
+                        ElseIf Key.ToString.StartsWith("APP_ID") Then
+                            TextBox8.Text = Key.ToString.Replace("APP_ID=", "")
+                        ElseIf Key.ToString.StartsWith("APP_KEY") Then
+                            TextBox9.Text = Key.ToString.Replace("APP_KEY=", "")
                         End If
                     Next
                 ElseIf Section = "Tencent" Then
@@ -46,20 +50,26 @@ Public Class Form1
         If Not System.IO.Directory.Exists(Environment.CurrentDirectory + "\main\data\config\") Then
             System.IO.Directory.CreateDirectory(Environment.CurrentDirectory + "\main\data\config\")
             WritePrivateProfileString("Baidu", "APPID", TextBox1.Text, IniFilePath)
-            WritePrivateProfileString("Baidu", "APPKey", TextBox2.Text, IniFilePath)
+            WritePrivateProfileString("Baidu", "APPKEY", TextBox2.Text, IniFilePath)
             WritePrivateProfileString("Baidu", "SecretKey", TextBox3.Text, IniFilePath)
+            WritePrivateProfileString("Baidu", "APP_ID", TextBox8.Text, IniFilePath)
+            WritePrivateProfileString("Baidu", "APP_KEY", TextBox9.Text, IniFilePath)
         Else
             If Not File.Exists(IniFilePath) Then
                 WritePrivateProfileString("Baidu", "APPID", TextBox1.Text, IniFilePath)
-                WritePrivateProfileString("Baidu", "APPKey", TextBox2.Text, IniFilePath)
+                WritePrivateProfileString("Baidu", "APPKEY", TextBox2.Text, IniFilePath)
                 WritePrivateProfileString("Baidu", "SecretKey", TextBox3.Text, IniFilePath)
+                WritePrivateProfileString("Baidu", "APP_ID", TextBox8.Text, IniFilePath)
+                WritePrivateProfileString("Baidu", "APP_KEY", TextBox9.Text, IniFilePath)
             Else
                 Dim Sections = GetAllSections(IniFilePath)
                 For Each Section In Sections
                     If Section = "Baidu" Then
                         WritePrivateProfileString("Baidu", "APPID", TextBox1.Text, IniFilePath)
-                        WritePrivateProfileString("Baidu", "APPKey", TextBox2.Text, IniFilePath)
+                        WritePrivateProfileString("Baidu", "APPKEY", TextBox2.Text, IniFilePath)
                         WritePrivateProfileString("Baidu", "SecretKey", TextBox3.Text, IniFilePath)
+                        WritePrivateProfileString("Baidu", "APP_ID", TextBox8.Text, IniFilePath)
+                        WritePrivateProfileString("Baidu", "APP_KEY", TextBox9.Text, IniFilePath)
                         MessageBox.Show("设置成功.")
                         Exit For
                     End If
@@ -67,8 +77,10 @@ Public Class Form1
             End If
         End If
         Baidu_APPID = TextBox1.Text
-        Baidu_APPKey = TextBox2.Text
+        Baidu_APPKEY = TextBox2.Text
         Baidu_SecretKey = TextBox3.Text
+        Baidu_APP_ID = TextBox8.Text
+        Baidu_APP_KEY = TextBox9.Text
     End Sub
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
         Dim path = Environment.CurrentDirectory & "\main\data\config\AI.ini"
@@ -100,8 +112,23 @@ Public Class Form1
 
         End If
         Tencent_APPID = TextBox4.Text
-        Tencent_APPKey = TextBox5.Text
+        Tencent_APPKEY = TextBox5.Text
         Tencent_SecretId = TextBox6.Text
         Tencent_SecretKey = TextBox7.Text
+    End Sub
+
+    Private Sub LinkLabel1_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel1.LinkClicked
+        System.Diagnostics.Process.Start(LinkLabel1.Text) '利用Process.Start来打开
+        LinkLabel1.LinkVisited = True
+    End Sub
+
+    Private Sub LinkLabel2_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs)
+        System.Diagnostics.Process.Start(LinkLabel2.Text) '利用Process.Start来打开
+        LinkLabel2.LinkVisited = True
+    End Sub
+
+    Private Sub LinkLabel3_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel3.LinkClicked
+        System.Diagnostics.Process.Start(LinkLabel3.Text) '利用Process.Start来打开
+        LinkLabel3.LinkVisited = True
     End Sub
 End Class
