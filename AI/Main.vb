@@ -6,7 +6,6 @@ Imports System.Security.Cryptography
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Threading
-Imports System.Web.Script.Serialization
 
 
 Module Main
