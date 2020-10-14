@@ -24,7 +24,10 @@ Imports Newtonsoft.Json.Linq
 Imports System.Web
 Imports System.IO
 Imports System.Windows.Forms
-
+Imports System.Text
+Imports System.Security.Cryptography
+Imports System.Net
+Imports System.Web.Script.Serialization
 
 Public Class TencentAPI
     Public Shared Function TecentChat2(szContents As String) As String
@@ -50,6 +53,56 @@ Public Class TencentAPI
             Console.WriteLine(e.ToString())
         End Try
         Return ""
+    End Function
+    Public Shared Function TecentChat1(szContents As String) As String
+        Dim params As New List(Of String)
+        params.Add("app_id:" + Tencent_APP_ID)
+        params.Add("session:10000")
+        params.Add("question:" + szContents)
+        params.Add("time_stamp:" + CLng((DateTime.UtcNow - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds).ToString)
+        params.Add("nonce_str:" + New Random(System.Environment.TickCount).Next(10000000, 99999999).ToString)
+        Dim sign As String = getReqSign(params, Tencent_APP_KEY)
+        params.Add("sign:" + sign)
+        Dim str As String = ""
+        For Each item As String In params
+            If item <> "" Then
+                str &= item.Split(":")(0) & "=" & UCase(HttpUtility.UrlEncode(item.Split(":")(1))) & "&"
+            End If
+        Next
+        Dim url = "https://api.ai.qq.com/fcgi-bin/nlp/nlp_textchat"
+        Dim szRes As String = ""
+        Using wc = New WebClient()
+            wc.Encoding = Encoding.UTF8
+            wc.Headers.Add(HttpRequestHeader.ContentType, "application/x-www-form-urlencoded")
+            wc.Headers.Add(HttpRequestHeader.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+            szRes = wc.UploadString(url, str)
+            Try
+                Dim jsons = New JavaScriptSerializer().DeserializeObject(szRes)
+                szRes = jsons("data")("answer").ToString
+            Catch ex As Exception
+                Debug.Print(szRes)
+            End Try
+
+        End Using
+        Return szRes
+    End Function
+    Private Shared Function getReqSign(params As List(Of String), appkey As String) As String
+        params.Sort()
+        Dim str As String = ""
+        For Each item As String In params
+            If item <> "" Then
+                str += item.Split(":")(0) & "=" & UCase(HttpUtility.UrlEncode(item.Split(":")(1))) + "&"
+            End If
+        Next
+        str = str & "app_key=" & appkey
+        Dim sBuilder As New StringBuilder()
+        Using hasher As MD5 = MD5.Create()
+            Dim dbytes As Byte() = hasher.ComputeHash(Encoding.UTF8.GetBytes(str))
+            For n As Integer = 0 To dbytes.Length - 1
+                sBuilder.Append(dbytes(n).ToString("X2"))
+            Next n
+        End Using
+        Return UCase(sBuilder.ToString)
     End Function
     Public Shared Function GetZones() As String
         Try

@@ -83,7 +83,7 @@ Public Class SilkHelp
         If File.Exists(ffmpge) AndAlso File.Exists(silkdecode) AndAlso File.Exists(silkencode) Then
             Dim name As String = audio_path.Substring(audio_path.LastIndexOf("\") + 1)
             Dim tempname As String = audioslik & "\" & name.Substring(0, name.LastIndexOf("."))
-            Runcmd(silkdecode, $"""{audio_path}"" ""{tempname}.pcm""")  'silk转pcm:   silkdecode "name.silk" "name2.pcm"
+            Runcmd(silkdecode, audioslik, $"""{audio_path}"" ""{tempname}.pcm""")  'silk转pcm:   silkdecode "name.silk" "name2.pcm"
             Return GetByte($"{tempname}.pcm")
         End If
         Return Nothing
@@ -112,15 +112,15 @@ Public Class SilkHelp
             Dim arg As String = $" -i ""{name}"" ""{tempname}.mp3"""
             'ffmpeg -i "name.silk" "name1.mp3"
             Try
-                Runcmd(ffmpge, arg)
+                Runcmd(ffmpge, audioslik, arg)
                 Return GetByte($"{tempname}.mp3")
             Catch e1 As Exception
                 'silkdecode "name.silk" "name2.pcm"
                 arg = $"""{audio_path}"" ""{tempname}.pcm"""
-                Runcmd(silkdecode, arg)
+                Runcmd(silkdecode, audioslik, arg)
                 'ffmpeg -f s16le -ar 24000 -ac 1 -i "name2.pcm" "name2.mp3"
                 arg = $" -f s16le -ar 24000 -ac 1 -i ""{tempname}.pcm"" ""{tempname}.mp3"""
-                Runcmd(ffmpge, arg)
+                Runcmd(ffmpge, audioslik, arg)
                 Return GetByte($"{tempname}.mp3")
             End Try
         End If
@@ -146,10 +146,10 @@ Public Class SilkHelp
                 Dim dic As DirectoryInfo = Directory.CreateDirectory(audioslik)
             End If
             Dim tempname As String = audioslik & "\" & name.Substring(0, name.LastIndexOf("."))
-            Dim arg As String = $"-y -i ""{name}"" -f s16le -ar 24000 -ac 1 ""{tempname}.pcm"""    'ffmpeg -y -i "1.mp3" -f s16le -ar 24000 -ac 1 "name.pcm"
-            Runcmd(ffmpge, arg)
-            arg = $"""{tempname}.pcm"" ""{tempname}.silk"" -tencent"    'silkencode "name.pcm" "name.silk" -tencent
-            Runcmd(silkencode, arg)
+            Dim arg As String = $"-y -i ""{name}"" -f s16le -ar 16000 -ac 1 -acodec pcm_s16le ""{tempname}.pcm"""    'mp3转pcm  ffmpeg -y -i test.mp3 -f s16le -ar 16000 -ac 1 -acodec pcm_s16le pcm16k.pcm
+            Runcmd(ffmpge, audioslik, arg)
+            arg = $"""{tempname}.pcm"" ""{tempname}.silk"" -tencent"     'pcm转silk  'silkencode "name.pcm" "name.silk" -tencent 
+            Runcmd(silkencode, audioslik, arg)
             Return GetByte($"{tempname}.silk")
         End If
         Return Nothing
@@ -172,10 +172,11 @@ Public Class SilkHelp
     ''' </summary>
     ''' <param name="filename"></param>
     ''' <param name="arg"></param>
-    Private Shared Sub Runcmd(ByVal filename As String, ByVal arg As String)
+    Private Shared Sub Runcmd(ByVal filename As String, WorkingDirectory As String, ByVal arg As String)
         Using p1 As New Process
             p1.StartInfo.CreateNoWindow = True
             'p1.StartInfo.Verb = "runas"
+            p1.StartInfo.WorkingDirectory = WorkingDirectory
             p1.StartInfo.FileName = filename
             p1.StartInfo.Arguments = arg
             p1.StartInfo.WindowStyle = ProcessWindowStyle.Hidden

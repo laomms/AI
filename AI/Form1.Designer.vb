@@ -46,6 +46,10 @@ Partial Class Form1
         Me.Label6 = New System.Windows.Forms.Label()
         Me.Label2 = New System.Windows.Forms.Label()
         Me.TabPage2 = New System.Windows.Forms.TabPage()
+        Me.LinkLabel4 = New System.Windows.Forms.LinkLabel()
+        Me.Label14 = New System.Windows.Forms.Label()
+        Me.TextBox10 = New System.Windows.Forms.TextBox()
+        Me.Label13 = New System.Windows.Forms.Label()
         Me.LinkLabel2 = New System.Windows.Forms.LinkLabel()
         Me.TextBox6 = New System.Windows.Forms.TextBox()
         Me.Button1 = New System.Windows.Forms.Button()
@@ -62,7 +66,7 @@ Partial Class Form1
         'Label9
         '
         Me.Label9.AutoSize = True
-        Me.Label9.Location = New System.Drawing.Point(15, 165)
+        Me.Label9.Location = New System.Drawing.Point(15, 90)
         Me.Label9.Name = "Label9"
         Me.Label9.Size = New System.Drawing.Size(58, 13)
         Me.Label9.TabIndex = 16
@@ -71,7 +75,7 @@ Partial Class Form1
         'Label7
         '
         Me.Label7.AutoSize = True
-        Me.Label7.Location = New System.Drawing.Point(16, 120)
+        Me.Label7.Location = New System.Drawing.Point(14, 65)
         Me.Label7.Name = "Label7"
         Me.Label7.Size = New System.Drawing.Size(59, 13)
         Me.Label7.TabIndex = 14
@@ -79,7 +83,7 @@ Partial Class Form1
         '
         'TextBox4
         '
-        Me.TextBox4.Location = New System.Drawing.Point(84, 29)
+        Me.TextBox4.Location = New System.Drawing.Point(82, 9)
         Me.TextBox4.Name = "TextBox4"
         Me.TextBox4.Size = New System.Drawing.Size(289, 20)
         Me.TextBox4.TabIndex = 13
@@ -138,7 +142,7 @@ Partial Class Form1
         'Label4
         '
         Me.Label4.AutoSize = True
-        Me.Label4.Location = New System.Drawing.Point(16, 91)
+        Me.Label4.Location = New System.Drawing.Point(14, 38)
         Me.Label4.Name = "Label4"
         Me.Label4.Size = New System.Drawing.Size(50, 13)
         Me.Label4.TabIndex = 12
@@ -146,7 +150,7 @@ Partial Class Form1
         '
         'TextBox5
         '
-        Me.TextBox5.Location = New System.Drawing.Point(84, 58)
+        Me.TextBox5.Location = New System.Drawing.Point(82, 115)
         Me.TextBox5.Name = "TextBox5"
         Me.TextBox5.Size = New System.Drawing.Size(289, 20)
         Me.TextBox5.TabIndex = 11
@@ -188,7 +192,7 @@ Partial Class Form1
         '
         'TextBox7
         '
-        Me.TextBox7.Location = New System.Drawing.Point(84, 117)
+        Me.TextBox7.Location = New System.Drawing.Point(82, 62)
         Me.TextBox7.Name = "TextBox7"
         Me.TextBox7.Size = New System.Drawing.Size(289, 20)
         Me.TextBox7.TabIndex = 15
@@ -196,11 +200,11 @@ Partial Class Form1
         'Label5
         '
         Me.Label5.AutoSize = True
-        Me.Label5.Location = New System.Drawing.Point(19, 61)
+        Me.Label5.Location = New System.Drawing.Point(17, 118)
         Me.Label5.Name = "Label5"
-        Me.Label5.Size = New System.Drawing.Size(52, 13)
+        Me.Label5.Size = New System.Drawing.Size(48, 13)
         Me.Label5.TabIndex = 10
-        Me.Label5.Text = "APPKEY:"
+        Me.Label5.Text = "APP_ID:"
         '
         'Button2
         '
@@ -221,7 +225,7 @@ Partial Class Form1
         'Label6
         '
         Me.Label6.AutoSize = True
-        Me.Label6.Location = New System.Drawing.Point(21, 32)
+        Me.Label6.Location = New System.Drawing.Point(19, 12)
         Me.Label6.Name = "Label6"
         Me.Label6.Size = New System.Drawing.Size(42, 13)
         Me.Label6.TabIndex = 7
@@ -238,6 +242,10 @@ Partial Class Form1
         '
         'TabPage2
         '
+        Me.TabPage2.Controls.Add(Me.LinkLabel4)
+        Me.TabPage2.Controls.Add(Me.Label14)
+        Me.TabPage2.Controls.Add(Me.TextBox10)
+        Me.TabPage2.Controls.Add(Me.Label13)
         Me.TabPage2.Controls.Add(Me.LinkLabel2)
         Me.TabPage2.Controls.Add(Me.Label9)
         Me.TabPage2.Controls.Add(Me.TextBox7)
@@ -257,10 +265,45 @@ Partial Class Form1
         Me.TabPage2.Text = "腾讯"
         Me.TabPage2.UseVisualStyleBackColor = True
         '
+        'LinkLabel4
+        '
+        Me.LinkLabel4.AutoSize = True
+        Me.LinkLabel4.Location = New System.Drawing.Point(79, 171)
+        Me.LinkLabel4.Name = "LinkLabel4"
+        Me.LinkLabel4.Size = New System.Drawing.Size(192, 13)
+        Me.LinkLabel4.TabIndex = 21
+        Me.LinkLabel4.TabStop = True
+        Me.LinkLabel4.Text = "https://ai.qq.com/console/application/"
+        '
+        'Label14
+        '
+        Me.Label14.AutoSize = True
+        Me.Label14.Location = New System.Drawing.Point(15, 171)
+        Me.Label14.Name = "Label14"
+        Me.Label14.Size = New System.Drawing.Size(58, 13)
+        Me.Label14.TabIndex = 20
+        Me.Label14.Text = "查询地址:"
+        '
+        'TextBox10
+        '
+        Me.TextBox10.Location = New System.Drawing.Point(82, 143)
+        Me.TextBox10.Name = "TextBox10"
+        Me.TextBox10.Size = New System.Drawing.Size(289, 20)
+        Me.TextBox10.TabIndex = 19
+        '
+        'Label13
+        '
+        Me.Label13.AutoSize = True
+        Me.Label13.Location = New System.Drawing.Point(13, 146)
+        Me.Label13.Name = "Label13"
+        Me.Label13.Size = New System.Drawing.Size(58, 13)
+        Me.Label13.TabIndex = 18
+        Me.Label13.Text = "APP_KEY:"
+        '
         'LinkLabel2
         '
         Me.LinkLabel2.AutoSize = True
-        Me.LinkLabel2.Location = New System.Drawing.Point(79, 165)
+        Me.LinkLabel2.Location = New System.Drawing.Point(79, 90)
         Me.LinkLabel2.Name = "LinkLabel2"
         Me.LinkLabel2.Size = New System.Drawing.Size(221, 13)
         Me.LinkLabel2.TabIndex = 17
@@ -269,7 +312,7 @@ Partial Class Form1
         '
         'TextBox6
         '
-        Me.TextBox6.Location = New System.Drawing.Point(84, 88)
+        Me.TextBox6.Location = New System.Drawing.Point(82, 35)
         Me.TextBox6.Name = "TextBox6"
         Me.TextBox6.Size = New System.Drawing.Size(289, 20)
         Me.TextBox6.TabIndex = 8
@@ -384,4 +427,8 @@ Partial Class Form1
     Friend WithEvents TabPage1 As Windows.Forms.TabPage
     Friend WithEvents TabControl1 As Windows.Forms.TabControl
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
+    Friend WithEvents LinkLabel4 As Windows.Forms.LinkLabel
+    Friend WithEvents Label14 As Windows.Forms.Label
+    Friend WithEvents TextBox10 As Windows.Forms.TextBox
+    Friend WithEvents Label13 As Windows.Forms.Label
 End Class

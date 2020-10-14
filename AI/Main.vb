@@ -39,6 +39,7 @@ Module Main
                 If filepath <> "" AndAlso File.Exists(filepath) Then
                     Dim audiobyte As Byte() = SilkHelp.SilkEncoding(filepath)
                     Dim ret = API.UploadGroupAudio(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, 0, "", audiobyte, audiobyte.Length)
+                    API.SendGroupMsg(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, Marshal.PtrToStringAnsi(ret), False)
                 End If
             ElseIf sMsg.MessageContent.Contains("[Audio,hash=") Then
                 Dim match = New Regex("(?<=url=).*?(?=,type=0)").Match(sMsg.MessageContent)
@@ -65,9 +66,12 @@ Module Main
                 API.SendGroupMsg(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, "中文翻译文本: " + vbNewLine + ret, False)
             ElseIf sMsg.MessageContent = "文字转语音" Then
                 API.SendGroupMsg(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, "[@" + sMsg.SenderQQ.ToString + "]" + vbNewLine + "请输入要转语音的文本 ", False)
-                    TempDic.Add(sMsg.SenderQQ, sMsg.MessageGroupQQ)
-                End If
+                TempDic.Add(sMsg.SenderQQ, sMsg.MessageGroupQQ)
+            ElseIf sMsg.MessageContent.Contains("[@" + sMsg.ThisQQ.ToString + "]") Then
+                API.SendGroupMsg(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, "[@" + sMsg.SenderQQ.ToString + "]" + TencentAPI.TecentChat1(sMsg.MessageContent.Replace("[@" + sMsg.ThisQQ.ToString + "]", "").Trim), False)
             End If
+
+        End If
             Return 0
     End Function
 

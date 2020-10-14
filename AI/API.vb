@@ -160,9 +160,10 @@ Public Class API
                     WritePrivateProfileString("Baidu", "APP_ID", "12345", IniFilePath)
                     WritePrivateProfileString("Baidu", "APP_KEY", "12345", IniFilePath)
                     WritePrivateProfileString("Tencent", "APPID", "12345", IniFilePath)
-                    WritePrivateProfileString("Tencent", "APPKEY", "12345", IniFilePath)
                     WritePrivateProfileString("Tencent", "SecretId", "12345", IniFilePath)
                     WritePrivateProfileString("Tencent", "SecretKey", "12345", IniFilePath)
+                    WritePrivateProfileString("Tencent", "APP_ID", "12345", IniFilePath)
+                    WritePrivateProfileString("Tencent", "APP_KEY", "12345", IniFilePath)
                 Else
                     If Not File.Exists(IniFilePath) Then
                         WritePrivateProfileString("Baidu", "APPID", "12345", IniFilePath)
@@ -171,9 +172,10 @@ Public Class API
                         WritePrivateProfileString("Baidu", "APP_ID", "12345", IniFilePath)
                         WritePrivateProfileString("Baidu", "APP_KEY", "12345", IniFilePath)
                         WritePrivateProfileString("Tencent", "APPID", "12345", IniFilePath)
-                        WritePrivateProfileString("Tencent", "APPKEY", "12345", IniFilePath)
                         WritePrivateProfileString("Tencent", "SecretId", "12345", IniFilePath)
                         WritePrivateProfileString("Tencent", "SecretKey", "12345", IniFilePath)
+                        WritePrivateProfileString("Tencent", "APP_ID", "12345", IniFilePath)
+                        WritePrivateProfileString("Tencent", "APP_KEY", "12345", IniFilePath)
                     End If
                 End If
 
@@ -195,16 +197,18 @@ Public Class API
                             End If
                         Next
                     ElseIf Section = "Tencent" Then
-                        Dim KeysList = GetSectionKeyNames(IniFilePath, Section)
-                        For Each Key In KeysList
-                            If Key.ToString.StartsWith("APPID") Then
-                                Tencent_APPID = Key.ToString.Replace("APPID=", "")
-                            ElseIf Key.ToString.StartsWith("APPKEY") Then
-                                Tencent_APPKEY = Key.ToString.Replace("APPKEY=", "")
-                            ElseIf Key.ToString.StartsWith("SecretId") Then
-                                Tencent_SecretId = Key.ToString.Replace("SecretId=", "")
-                            ElseIf Key.ToString.StartsWith("SecretKey") Then
-                                Tencent_SecretKey = Key.ToString.Replace("SecretKey=", "")
+                        Dim KeysLists = GetSectionKeyNames(IniFilePath, Section)
+                        For Each Keys In KeysLists
+                            If Keys.ToString.StartsWith("APPID") Then
+                                Tencent_APPID = Keys.ToString.Replace("APPID=", "")
+                            ElseIf Keys.ToString.StartsWith("SecretId") Then
+                                Tencent_SecretId = Keys.ToString.Replace("SecretId=", "")
+                            ElseIf Keys.ToString.StartsWith("SecretKey") Then
+                                Tencent_SecretKey = Keys.ToString.Replace("SecretKey=", "")
+                            ElseIf Keys.ToString.StartsWith("APP_ID") Then
+                                Tencent_APP_ID = Keys.ToString.Replace("APP_ID=", "")
+                            ElseIf Keys.ToString.StartsWith("APP_KEY") Then
+                                Tencent_APP_KEY = Keys.ToString.Replace("APP_KEY=", "")
                             End If
                         Next
                     End If

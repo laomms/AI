@@ -14,9 +14,10 @@ Public Module Pinvoke
     Public Baidu_APP_ID As String
     Public Baidu_APP_KEY As String
     Public Tencent_APPID As String
-    Public Tencent_APPKEY As String
     Public Tencent_SecretId As String
     Public Tencent_SecretKey As String
+    Public Tencent_APP_ID As String
+    Public Tencent_APP_KEY As String
     Public IniFilePath = Environment.CurrentDirectory + "\main\data\config\AI.ini"
 #End Region
 
