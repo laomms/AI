@@ -4,3 +4,5 @@
 请先申请好各种APIID和APIKEY    
 有些API要事先领取免费试用额     
 
+![image](https://github.com/laomms/AI/blob/master/AI.jpg)   
+
