@@ -6,3 +6,5 @@
 
 ![image](https://github.com/laomms/AI/blob/master/AI.jpg)   
 
+![image](https://github.com/laomms/AI/blob/master/aiqq.png)   
+
