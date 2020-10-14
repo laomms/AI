@@ -34,8 +34,7 @@ Module Main
         If sMsg.SenderQQ <> sMsg.ThisQQ Then
             If TempDic.ContainsKey(sMsg.SenderQQ) AndAlso TempDic.ContainsValue(sMsg.MessageGroupQQ) Then
                 TempDic.Remove(sMsg.SenderQQ)
-                'Dim filepath As String = BaiduAPI.TtsSpeech(sMsg.MessageContent)
-                Dim filepath As String = Environment.CurrentDirectory + "\main\data\voice\saved.mp3"
+                Dim filepath As String = BaiduAPI.TtsSpeech(sMsg.MessageContent)
                 If filepath <> "" AndAlso File.Exists(filepath) Then
                     Dim audiobyte As Byte() = SilkHelp.SilkEncoding(filepath)
                     Dim ret = API.UploadGroupAudio(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, 0, "", audiobyte, audiobyte.Length)
