@@ -42,7 +42,7 @@ Public Class BaiduAPI
                 szResult = szResult + vbNewLine + result("words_result")(i)("words").ToString
             Next
         Catch ex As Exception
-
+            Return "调用失败: " + ex.Message.ToString()
         End Try
         Return szResult
     End Function
@@ -63,60 +63,73 @@ Public Class BaiduAPI
         Try
             jsonResult = wc.DownloadString(url)
             Dim jsons As Object = New JavaScriptSerializer().DeserializeObject(jsonResult)
-            For Each item As Dictionary(Of String, Object) In jsons("trans_result")
-                szResult = szResult + item.Values(1).ToString() + vbNewLine
-            Next
-        Catch
-
+            If jsonResult.Contains("error_code") Then
+                szResult = "调用失败: " + jsons("error_msg")
+            Else
+                For Each item As Dictionary(Of String, Object) In jsons("trans_result")
+                    szResult = szResult + item.Values(1).ToString() + vbNewLine
+                Next
+            End If
+        Catch ex As Exception
+            Return "调用失败: " + ex.Message.ToString()
         End Try
         Return szResult
     End Function
     Public Shared Function RegisterOCR(imagePath As String) As String '注册人脸
-        Dim client = New Baidu.Aip.Face.Face(Baidu_APPKEY, Baidu_SecretKey)
-        client.Timeout = 60000 ' 修改超时时间
-        '取决于image_type参数，传入BASE64字符串或URL字符串或FACE_TOKEN字符串
-        '你共享的图片路径（点击路径可直接查看图片）
-        Dim image = "https://thumbnail0.baidupcs.com/thumbnail/32f3cc8f022839a4dbf6b9f9cca76ce8?fid=3145591938-250528-218900036170682&time=1550282400&rt=sh&sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-sTBqvQbbBy3n5SDQfbtjNwjlSHg%3D&expires=8h&chkv=0&chkbd=0&chkpc=&dp-logid=1077356968076791248&dp-callid=0&size=c710_u400&quality=100&vuk=-&ft=video"
-        Dim imageType = "URL"
-        '注册人脸
-        Dim groupId = "group1"
-        Dim userId = "user1"
-        ' 调用人脸注册，可能会抛出网络等异常，请使用try/catch捕获
-        Dim result = client.UserAdd(image, imageType, groupId, userId)
-        Console.WriteLine(result)
-        ' 如果有可选参数
-        Dim options = New Dictionary(Of String, Object) From {
-                {"user_info", "user's info"},
-                {"quality_control", "NORMAL"},
-                {"liveness_control", "LOW"}
-            }
-        ' 带参数调用人脸注册
-        result = client.UserAdd(image, imageType, groupId, userId, options)
-        Console.WriteLine(result)
-        Return result
+        Try
+            Dim client = New Baidu.Aip.Face.Face(Baidu_APPKEY, Baidu_SecretKey)
+            client.Timeout = 60000 ' 修改超时时间
+            '取决于image_type参数，传入BASE64字符串或URL字符串或FACE_TOKEN字符串
+            '你共享的图片路径（点击路径可直接查看图片）
+            Dim image = "https://thumbnail0.baidupcs.com/thumbnail/32f3cc8f022839a4dbf6b9f9cca76ce8?fid=3145591938-250528-218900036170682&time=1550282400&rt=sh&sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-sTBqvQbbBy3n5SDQfbtjNwjlSHg%3D&expires=8h&chkv=0&chkbd=0&chkpc=&dp-logid=1077356968076791248&dp-callid=0&size=c710_u400&quality=100&vuk=-&ft=video"
+            Dim imageType = "URL"
+            '注册人脸
+            Dim groupId = "group1"
+            Dim userId = "user1"
+            ' 调用人脸注册，可能会抛出网络等异常，请使用try/catch捕获
+            Dim result = client.UserAdd(image, imageType, groupId, userId)
+            Console.WriteLine(result)
+            ' 如果有可选参数
+            Dim options = New Dictionary(Of String, Object) From {
+                    {"user_info", "user's info"},
+                    {"quality_control", "NORMAL"},
+                    {"liveness_control", "LOW"}
+                }
+            ' 带参数调用人脸注册
+            result = client.UserAdd(image, imageType, groupId, userId, options)
+            Return result
+        Catch ex As Exception
+            Return "调用失败: " + ex.Message.ToString()
+        End Try
+
     End Function
     Public Shared Function FaceOCR(imagePath As String) As String '识别人脸
-        Dim client = New Baidu.Aip.Face.Face(Baidu_APPKEY, Baidu_SecretKey)
-        client.Timeout = 60000 ' 修改超时时间
-        '取决于image_type参数，传入BASE64字符串或URL字符串或FACE_TOKEN字符串
-        '你共享的图片路径（点击路径可直接查看图片）
-        Dim image = "https://thumbnail0.baidupcs.com/thumbnail/32f3cc8f022839a4dbf6b9f9cca76ce8?fid=3145591938-250528-218900036170682&time=1550282400&rt=sh&sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-sTBqvQbbBy3n5SDQfbtjNwjlSHg%3D&expires=8h&chkv=0&chkbd=0&chkpc=&dp-logid=1077356968076791248&dp-callid=0&size=c710_u400&quality=100&vuk=-&ft=video"
-        Dim imageType = "URL"
+        Try
+            Dim client = New Baidu.Aip.Face.Face(Baidu_APPKEY, Baidu_SecretKey)
+            client.Timeout = 60000 ' 修改超时时间
+            '取决于image_type参数，传入BASE64字符串或URL字符串或FACE_TOKEN字符串
+            '你共享的图片路径（点击路径可直接查看图片）
+            Dim image = "https://thumbnail0.baidupcs.com/thumbnail/32f3cc8f022839a4dbf6b9f9cca76ce8?fid=3145591938-250528-218900036170682&time=1550282400&rt=sh&sign=FDTAER-DCb740ccc5511e5e8fedcff06b081203-sTBqvQbbBy3n5SDQfbtjNwjlSHg%3D&expires=8h&chkv=0&chkbd=0&chkpc=&dp-logid=1077356968076791248&dp-callid=0&size=c710_u400&quality=100&vuk=-&ft=video"
+            Dim imageType = "URL"
 
-        '人脸识别（在注册的人脸库里面进行识别）
-        '调用人脸检测，可能会抛出网络等异常，请使用try / catch捕获
-        Dim result = client.Detect(image, imageType)
-        Console.WriteLine(result)
-        ' 如果有可选参数
-        Dim options = New Dictionary(Of String, Object) From {
-                {"face_field", "age"},
-                {"max_face_num", 2},
-                {"face_type", "LIVE"}
-            }
-        ' 带参数调用人脸检测
-        result = client.Detect(image, imageType, options)
-        Console.WriteLine(result)
-        Return result
+            '人脸识别（在注册的人脸库里面进行识别）
+            '调用人脸检测，可能会抛出网络等异常，请使用try / catch捕获
+            Dim result = client.Detect(image, imageType)
+            Console.WriteLine(result)
+            ' 如果有可选参数
+            Dim options = New Dictionary(Of String, Object) From {
+                    {"face_field", "age"},
+                    {"max_face_num", 2},
+                    {"face_type", "LIVE"}
+                }
+            ' 带参数调用人脸检测
+            result = client.Detect(image, imageType, options)
+            Console.WriteLine(result)
+            Return result
+        Catch ex As Exception
+            Return "调用失败: " + ex.Message.ToString()
+        End Try
+
     End Function
     Public Shared Function VoiceSpeech(data() As Byte) As String '语音识别,第一次使用记得领取免费试用额
         Try
@@ -136,26 +149,31 @@ Public Class BaiduAPI
 
     End Function
     Public Shared Function TtsSpeech(szContent As String) As String '语音合成,第一次使用记得领取免费试用额
-        Dim _ttsClient = New Baidu.Aip.Speech.Tts(Baidu_APPKEY, Baidu_SecretKey)
-        _ttsClient.Timeout = 60000
-        Dim options = New Dictionary(Of String, Object) From
-        {
-         {"spd", 5},
-         {"vol", 7},
-         {"per", 4}
-        }
-        Dim folderpath As String = Environment.CurrentDirectory & "\main\data\voice"
-        If Not Directory.Exists(folderpath) Then
-            Dim dic As DirectoryInfo = Directory.CreateDirectory(folderpath)
-        End If
-        Dim result = _ttsClient.Synthesis(szContent, options)
-        If result.ErrorCode = 0 Then ' 或 result.Success
-            'File.WriteAllBytes("E:\Work Demo\语音技术\Voice\Voice\Image\aaa.mp3", result.Data)
-            File.WriteAllBytes(folderpath + "\saved.mp3", result.Data)
-            Return folderpath + "\saved.mp3"
-        End If
-        Return ""
+        Try
+            Dim _ttsClient = New Baidu.Aip.Speech.Tts(Baidu_APPKEY, Baidu_SecretKey)
+            _ttsClient.Timeout = 60000
+            Dim options = New Dictionary(Of String, Object) From
+            {
+             {"spd", 2},
+             {"vol", 7},
+             {"per", 4}
+            }
+            Dim folderpath As String = Environment.CurrentDirectory & "\main\data\voice"
+            If Not Directory.Exists(folderpath) Then
+                Dim dic As DirectoryInfo = Directory.CreateDirectory(folderpath)
+            End If
+            Dim result = _ttsClient.Synthesis(szContent, options)
+            If result.ErrorCode = 0 Then
+                If File.Exists(folderpath + "\saved.mp3") Then
+                    File.Delete(folderpath + "\saved.mp3")
+                End If
+                File.WriteAllBytes(folderpath + "\saved.mp3", result.Data)
+                Return folderpath + "\saved.mp3"
+            Else
+                Return "调用失败: " + result.ErrorMsg.ToString
+            End If
+        Catch ex As Exception
+            Return ex.Message.ToString
+        End Try
     End Function
-
-
 End Class

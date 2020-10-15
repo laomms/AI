@@ -39,6 +39,8 @@ Module Main
                     Dim audiobyte As Byte() = SilkHelp.SilkEncoding(filepath)
                     Dim ret = API.UploadGroupAudio(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, 0, "", audiobyte, audiobyte.Length)
                     API.SendGroupMsg(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, Marshal.PtrToStringAnsi(ret), False)
+                Else
+                    API.SendGroupMsg(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, "调用失败: " + filepath, False)
                 End If
             ElseIf sMsg.MessageContent.Contains("[Audio,hash=") Then
                 Dim match = New Regex("(?<=url=).*?(?=,type=0)").Match(sMsg.MessageContent)

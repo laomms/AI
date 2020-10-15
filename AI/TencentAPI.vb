@@ -48,9 +48,10 @@ Public Class TencentAPI
             Dim resp As ChatResponse = client.ChatSync(req)
             Console.WriteLine(AbstractModel.ToJsonString(resp))
             Dim jsons As JObject = JObject.Parse(AbstractModel.ToJsonString(resp))
+
             Return jsons.SelectToken("Response").SelectToken("Answer").ToString
         Catch e As Exception
-            Console.WriteLine(e.ToString())
+            Return "调用失败: " + e.Message.ToString()
         End Try
         Return ""
     End Function
@@ -78,9 +79,14 @@ Public Class TencentAPI
             szRes = wc.UploadString(url, str)
             Try
                 Dim jsons = New JavaScriptSerializer().DeserializeObject(szRes)
-                szRes = jsons("data")("answer").ToString
-            Catch ex As Exception
-                Debug.Print(szRes)
+                If jsons("msg").ToString <> "ok" Then
+                    szRes = "调用接口失败: " + jsons("msg").ToString
+                Else
+                    szRes = jsons("data")("answer").ToString
+                End If
+
+            Catch e As Exception
+                Return "调用失败: " + e.Message.ToString()
             End Try
 
         End Using
@@ -159,53 +165,58 @@ Public Class TencentAPI
             ' 输出json格式的字符串回包
             Return AbstractModel.ToJsonString(resp)
         Catch e As Exception
-            Return e.ToString()
+            Return "调用失败: " + e.Message.ToString()
         End Try
     End Function
     Public Shared Function TestToVoice(szText As String) As Byte()
-        Dim cred As New Credential With {
+        Try
+            Dim cred As New Credential With {
                 .SecretId = Tencent_SecretId,
                 .SecretKey = Tencent_SecretKey
             }
-        Dim aaiClient As New AaiClient(cred, "ap-beijing")
-        Dim req As New TextToVoiceRequest()
-        req.ProjectId = 10144947
-        req.ModelType = 1
-        req.PrimaryLanguage = 1
-        req.SampleRate = 5
-        req.SessionId = "testsessionid"
-        req.Speed = 1.0F
-        req.Text = szText
-        req.VoiceType = 1
-        req.Volume = 1.0F
-        Dim textToVoiceResponse As TextToVoiceResponse = aaiClient.TextToVoiceSync(req)
-        Dim audio As String = textToVoiceResponse.Audio()
-        If Not audio Is String.Empty Then
-            Try
+            Dim aaiClient As New AaiClient(cred, "ap-beijing")
+            Dim req As New TextToVoiceRequest()
+            req.ProjectId = 10144947
+            req.ModelType = 1
+            req.PrimaryLanguage = 1
+            req.SampleRate = 5
+            req.SessionId = "testsessionid"
+            req.Speed = 1.0F
+            req.Text = szText
+            req.VoiceType = 1
+            req.Volume = 1.0F
+            Dim textToVoiceResponse As TextToVoiceResponse = aaiClient.TextToVoiceSync(req)
+            Dim audio As String = textToVoiceResponse.Audio()
+            If Not audio Is String.Empty Then
                 Return System.Convert.FromBase64String(audio)
-            Catch ex As Exception
+            End If
+        Catch ex As Exception
 
-            End Try
-        End If
+        End Try
         Return Nothing
     End Function
     Public Shared Function TextDetect(szText As String) As String
-        Dim cred As New Credential With {
-                .SecretId = Tencent_SecretId,
-                .SecretKey = Tencent_SecretKey
-            }
-        Dim httpProfile As New HttpProfile()
-        httpProfile.Endpoint = "ocr.tencentcloudapi.com"
+        Try
+            Dim cred As New Credential With {
+              .SecretId = Tencent_SecretId,
+              .SecretKey = Tencent_SecretKey
+          }
+            Dim httpProfile As New HttpProfile()
+            httpProfile.Endpoint = "ocr.tencentcloudapi.com"
 
-        Dim clientProfile As New ClientProfile()
-        clientProfile.SignMethod = "TC3-HMAC-SHA256"
-        clientProfile.HttpProfile = httpProfile
+            Dim clientProfile As New ClientProfile()
+            clientProfile.SignMethod = "TC3-HMAC-SHA256"
+            clientProfile.HttpProfile = httpProfile
 
-        Dim client As New TmtClient(cred, "ap-guangzhou", clientProfile)
-        Dim req As New Models.LanguageDetectRequest
-        req.Text = szText
-        Dim resp = client.LanguageDetectSync(req)
-        Return resp.ToString
+            Dim client As New TmtClient(cred, "ap-guangzhou", clientProfile)
+            Dim req As New Models.LanguageDetectRequest
+            req.Text = szText
+            Dim resp = client.LanguageDetectSync(req)
+            Return resp.ToString
+        Catch e As Exception
+            Return "调用失败: " + e.Message.ToString()
+        End Try
+
         Return Nothing
     End Function
     Private Function GetFaceMarks(txtPicUrl As String, ByVal strFullPathPicFileName As String) As String
@@ -237,13 +248,10 @@ Public Class TencentAPI
                     Return ""
                 End If
             End If
-
-            '  异步方式发出request, 等待结果
             Dim resp As AnalyzeFaceResponse = client.AnalyzeFaceSync(faceReq)
-            ' 输出json格式的字符串回包
             Return AbstractModel.ToJsonString(resp)
         Catch e As Exception
-            Return e.ToString()
+            Return "调用失败: " + e.Message.ToString()
         End Try
     End Function
     Public Shared Function translate(szText As String) As String
@@ -267,70 +275,80 @@ Public Class TencentAPI
             Dim resp = client.TextTranslateSync(req)
             Return AbstractModel.ToJsonString(resp)
         Catch e As TencentCloudSDKException
-            Return e.ToString()
+            Return "调用失败: " + e.Message.ToString()
         End Try
     End Function
     Public Shared Function TencentOcr(img_url As String) As String
-        Dim cred As New Credential With {
-                .SecretId = Tencent_SecretId,
-                .SecretKey = Tencent_SecretKey
-                }
-        Dim httpProfile As New HttpProfile()
-        httpProfile.Endpoint = "ocr.tencentcloudapi.com"
-
-        Dim clientProfile As New ClientProfile()
-        clientProfile.SignMethod = "TC3-HMAC-SHA256"
-
-        clientProfile.HttpProfile = httpProfile
-        Dim client As New OcrClient(cred, "ap-guangzhou", clientProfile)
-        Dim req As New Models.GeneralBasicOCRRequest()
-        req.ImageUrl = img_url
-        Dim resp = client.GeneralBasicOCRSync(req)
-        Dim jsons As JObject = JObject.Parse(AbstractModel.ToJsonString(resp))
-        Dim szResult As String = ""
         Try
+            Dim cred As New Credential With {
+               .SecretId = Tencent_SecretId,
+               .SecretKey = Tencent_SecretKey
+               }
+            Dim httpProfile As New HttpProfile()
+            httpProfile.Endpoint = "ocr.tencentcloudapi.com"
+
+            Dim clientProfile As New ClientProfile()
+            clientProfile.SignMethod = "TC3-HMAC-SHA256"
+
+            clientProfile.HttpProfile = httpProfile
+            Dim client As New OcrClient(cred, "ap-guangzhou", clientProfile)
+            Dim req As New Models.GeneralBasicOCRRequest()
+            req.ImageUrl = img_url
+            Dim resp = client.GeneralBasicOCRSync(req)
+            Dim jsons As JObject = JObject.Parse(AbstractModel.ToJsonString(resp))
+            Dim szResult As String = ""
             Dim count = jsons("TextDetections").Count
             For i = 0 To count - 1
                 szResult = szResult + vbNewLine + jsons("TextDetections")(i)("DetectedText").ToString
             Next
+            Return szResult
         Catch ex As Exception
-
+            Return "调用失败: " + ex.Message.ToString()
         End Try
-        Return szResult
     End Function
     Public Shared Function ImageDetect(img_url As String) As String
-        Dim cred As New Credential With {
-                .SecretId = Tencent_SecretId,
-                .SecretKey = Tencent_SecretKey
-                }
-        Dim clientProfile As New ClientProfile()
-        Dim httpProfile As New HttpProfile()
-        httpProfile.Endpoint = ("tiia.tencentcloudapi.com")
-        clientProfile.HttpProfile = httpProfile
+        Try
+            Dim cred As New Credential With {
+              .SecretId = Tencent_SecretId,
+              .SecretKey = Tencent_SecretKey
+              }
+            Dim clientProfile As New ClientProfile()
+            Dim httpProfile As New HttpProfile()
+            httpProfile.Endpoint = ("tiia.tencentcloudapi.com")
+            clientProfile.HttpProfile = httpProfile
 
-        Dim client As New TiiaClient(cred, "ap-guangzhou", clientProfile)
-        Dim req As New DetectMisbehaviorRequest()
-        req.ImageUrl = img_url
-        Dim resp As DetectMisbehaviorResponse = client.DetectMisbehaviorSync(req)
-        Return AbstractModel.ToJsonString(resp)
+            Dim client As New TiiaClient(cred, "ap-guangzhou", clientProfile)
+            Dim req As New DetectMisbehaviorRequest()
+            req.ImageUrl = img_url
+            Dim resp As DetectMisbehaviorResponse = client.DetectMisbehaviorSync(req)
+            Return AbstractModel.ToJsonString(resp)
+        Catch ex As Exception
+            Return "调用失败: " + ex.Message.ToString()
+        End Try
+
 
 
     End Function
     Public Shared Function ImagePornDetect(imageUrl As String) As String
-        Dim cred As New Credential With {
-                .SecretId = Tencent_SecretId,
-                .SecretKey = Tencent_SecretKey
-                }
-        Dim clientProfile As New ClientProfile()
-        Dim httpProfile As New HttpProfile()
-        httpProfile.Endpoint = ("ticm.tencentcloudapi.com")
-        clientProfile.HttpProfile = httpProfile
+        Try
+            Dim cred As New Credential With {
+               .SecretId = Tencent_SecretId,
+               .SecretKey = Tencent_SecretKey
+               }
+            Dim clientProfile As New ClientProfile()
+            Dim httpProfile As New HttpProfile()
+            httpProfile.Endpoint = ("ticm.tencentcloudapi.com")
+            clientProfile.HttpProfile = httpProfile
 
-        Dim client As New TicmClient(cred, "ap-guangzhou", clientProfile)
-        Dim req As New TencentCloud.Ticm.V20181127.Models.ImageModerationRequest()
-        req.ImageUrl = imageUrl
-        Dim resp As TencentCloud.Ticm.V20181127.Models.ImageModerationResponse = client.ImageModerationSync(req)
-        Return AbstractModel.ToJsonString(resp)
+            Dim client As New TicmClient(cred, "ap-guangzhou", clientProfile)
+            Dim req As New TencentCloud.Ticm.V20181127.Models.ImageModerationRequest()
+            req.ImageUrl = imageUrl
+            Dim resp As TencentCloud.Ticm.V20181127.Models.ImageModerationResponse = client.ImageModerationSync(req)
+            Return AbstractModel.ToJsonString(resp)
+        Catch ex As Exception
+            Return "调用失败: " + ex.Message.ToString()
+        End Try
+
     End Function
 
     'Dim aaa() As String = New String() {"+8613711112222", "+8613711112222"}
@@ -392,6 +410,7 @@ Public Class TencentAPI
                 context.Response.Write("{""Status"":""fail"",""errorMsg"":""请选择上传的图片！""}")
             End If
         Catch ex As Exception
+            Debug.Print(ex.ToString())
         End Try
     End Sub
     Private Function GetOCRMsg(ByVal imgStr As String) As String
