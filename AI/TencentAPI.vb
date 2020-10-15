@@ -50,8 +50,12 @@ Public Class TencentAPI
             Dim jsons As JObject = JObject.Parse(AbstractModel.ToJsonString(resp))
 
             Return jsons.SelectToken("Response").SelectToken("Answer").ToString
-        Catch e As Exception
-            Return "调用失败: " + e.Message.ToString()
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
         Return ""
     End Function
@@ -85,8 +89,12 @@ Public Class TencentAPI
                     szRes = jsons("data")("answer").ToString
                 End If
 
-            Catch e As Exception
-                Return "调用失败: " + e.Message.ToString()
+            Catch ex As Exception
+                If Not ex.InnerException Is Nothing Then
+                    Return "调用失败: " + ex.GetBaseException.Message.ToString
+                Else
+                    Return "调用失败: " + ex.Message.ToString
+                End If
             End Try
 
         End Using
@@ -126,8 +134,12 @@ Public Class TencentAPI
             Dim req As New DescribeZonesRequest()
             Dim resp As DescribeZonesResponse = client.DescribeZonesSync(req)
             Return AbstractModel.ToJsonString(resp)
-        Catch e As Exception
-            Return e.ToString()
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
     End Function
     Public Shared Function VoiceRecognition(strFilepath As String) As String
@@ -165,7 +177,11 @@ Public Class TencentAPI
             ' 输出json格式的字符串回包
             Return AbstractModel.ToJsonString(resp)
         Catch e As Exception
-            Return "调用失败: " + e.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
     End Function
     Public Shared Function TestToVoice(szText As String) As Byte()
@@ -213,8 +229,12 @@ Public Class TencentAPI
             req.Text = szText
             Dim resp = client.LanguageDetectSync(req)
             Return resp.ToString
-        Catch e As Exception
-            Return "调用失败: " + e.Message.ToString()
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
 
         Return Nothing
@@ -250,8 +270,12 @@ Public Class TencentAPI
             End If
             Dim resp As AnalyzeFaceResponse = client.AnalyzeFaceSync(faceReq)
             Return AbstractModel.ToJsonString(resp)
-        Catch e As Exception
-            Return "调用失败: " + e.Message.ToString()
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
     End Function
     Public Shared Function translate(szText As String) As String
@@ -274,8 +298,12 @@ Public Class TencentAPI
             req.Target = "zh"
             Dim resp = client.TextTranslateSync(req)
             Return AbstractModel.ToJsonString(resp)
-        Catch e As TencentCloudSDKException
-            Return "调用失败: " + e.Message.ToString()
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
     End Function
     Public Shared Function TencentOcr(img_url As String) As String
@@ -303,7 +331,11 @@ Public Class TencentAPI
             Next
             Return szResult
         Catch ex As Exception
-            Return "调用失败: " + ex.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
     End Function
     Public Shared Function ImageDetect(img_url As String) As String
@@ -323,7 +355,11 @@ Public Class TencentAPI
             Dim resp As DetectMisbehaviorResponse = client.DetectMisbehaviorSync(req)
             Return AbstractModel.ToJsonString(resp)
         Catch ex As Exception
-            Return "调用失败: " + ex.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
 
 
@@ -346,7 +382,11 @@ Public Class TencentAPI
             Dim resp As TencentCloud.Ticm.V20181127.Models.ImageModerationResponse = client.ImageModerationSync(req)
             Return AbstractModel.ToJsonString(resp)
         Catch ex As Exception
-            Return "调用失败: " + ex.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
 
     End Function
@@ -431,8 +471,12 @@ Public Class TencentAPI
             req = JsonConvert.DeserializeObject(Of IDCardOCRRequest)(strParams)
             Dim resp As IDCardOCRResponse = client.IDCardOCR(req).ConfigureAwait(False).GetAwaiter().GetResult()
             Return AbstractModel.ToJsonString(resp)
-        Catch e As Exception
-            Return e.Message.ToString()
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
     End Function
 

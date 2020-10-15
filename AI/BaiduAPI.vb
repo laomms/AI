@@ -42,7 +42,11 @@ Public Class BaiduAPI
                 szResult = szResult + vbNewLine + result("words_result")(i)("words").ToString
             Next
         Catch ex As Exception
-            Return "调用失败: " + ex.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
         Return szResult
     End Function
@@ -71,7 +75,11 @@ Public Class BaiduAPI
                 Next
             End If
         Catch ex As Exception
-            Return "调用失败: " + ex.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
         Return szResult
     End Function
@@ -99,7 +107,11 @@ Public Class BaiduAPI
             result = client.UserAdd(image, imageType, groupId, userId, options)
             Return result
         Catch ex As Exception
-            Return "调用失败: " + ex.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
 
     End Function
@@ -127,7 +139,11 @@ Public Class BaiduAPI
             Console.WriteLine(result)
             Return result
         Catch ex As Exception
-            Return "调用失败: " + ex.Message.ToString()
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
 
     End Function
@@ -144,7 +160,11 @@ Public Class BaiduAPI
             Dim res = client.Recognize(data, "pcm", 16000, options)
             Return res("result")(0)
         Catch ex As Exception
-            Return ex.Message.ToString
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
 
     End Function
@@ -173,7 +193,11 @@ Public Class BaiduAPI
                 Return "调用失败: " + result.ErrorMsg.ToString
             End If
         Catch ex As Exception
-            Return ex.Message.ToString
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
         End Try
     End Function
 End Class
