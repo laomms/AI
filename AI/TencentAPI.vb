@@ -28,6 +28,9 @@ Imports System.Text
 Imports System.Security.Cryptography
 Imports System.Net
 Imports System.Web.Script.Serialization
+Imports System.Security.Cryptography.X509Certificates
+Imports System.Net.Security
+Imports System.Drawing.Imaging
 
 Public Class TencentAPI
     Public Shared Function TecentChat2(szContents As String) As String
@@ -176,7 +179,7 @@ Public Class TencentAPI
             Dim resp As SentenceRecognitionResponse = client.SentenceRecognitionSync(req)
             ' 输出json格式的字符串回包
             Return AbstractModel.ToJsonString(resp)
-        Catch e As Exception
+        Catch ex As Exception
             If Not ex.InnerException Is Nothing Then
                 Return "调用失败: " + ex.GetBaseException.Message.ToString
             Else
@@ -393,7 +396,7 @@ Public Class TencentAPI
 
     'Dim aaa() As String = New String() {"+8613711112222", "+8613711112222"}
     'SendMessageAsync(“短信发送测试！”, aaa)
-    Sub SendMessageAsync(ByVal sContent As String, ByVal sPhone As String())
+    Public Shared Sub SendMessageAsync(ByVal sContent As String, ByVal sPhone As String())
         Try
             '* CAM 密匙查询：https :       //console.cloud.tencent.com/cam/capi*/
             Dim cred As New Credential With {
@@ -426,7 +429,7 @@ Public Class TencentAPI
             MessageBox.Show("短信发送失败！")
         End Try
     End Sub
-    Private Sub IDCardVerificationBySDK(ByVal context As HttpContext)
+    Public Shared Sub IDCardVerificationBySDK(ByVal context As HttpContext)
         Dim imgStr As String = context.Request("ImageBase64")
         Try
             If Not String.IsNullOrEmpty(imgStr) Then
@@ -453,7 +456,7 @@ Public Class TencentAPI
             Debug.Print(ex.ToString())
         End Try
     End Sub
-    Private Function GetOCRMsg(ByVal imgStr As String) As String
+    Public Shared Function GetOCRMsg(ByVal imgStr As String) As String
         Try
             Dim cred As New Credential With {
                 .SecretId = Tencent_SecretId,
@@ -480,4 +483,230 @@ Public Class TencentAPI
         End Try
     End Function
 
+    Public Shared Function TencentOcr2(image_url As String) As String
+
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 Or SecurityProtocolType.Ssl3 Or SecurityProtocolType.Tls Or SecurityProtocolType.Tls11
+        ServicePointManager.ServerCertificateValidationCallback = Function(sender As Object, certificate As X509Certificate, chain As X509Chain, sslPolicyErrors As SslPolicyErrors)
+                                                                      Return True
+                                                                  End Function
+
+        Dim Authorization = HmacSha1Sign(Tencent_APPID, Tencent_SecretId, Tencent_SecretKey, "bucket-01", 2592000)
+        Dim Text = ""
+        Dim jsonText = "{""appid"":""1256493063"",""bucket"":""bucket-01"",""url"":""" & image_url & """}"
+        Dim data = Encoding.UTF8.GetBytes(jsonText)
+        Dim httpWebRequest As HttpWebRequest = WebRequest.Create("https://recognition.image.myqcloud.com/ocr/general")
+        httpWebRequest.KeepAlive = True
+        httpWebRequest.Method = "POST"
+        httpWebRequest.ContentType = "application/json; charset=utf-8"
+        httpWebRequest.Host = "recognition.image.myqcloud.com"
+        httpWebRequest.Headers.Add(HttpRequestHeader.Authorization, "Basic " & Authorization)
+        'httpWebRequest.ContentLength = Data.Length
+        Dim requestStream As Stream
+        Try
+            requestStream = httpWebRequest.GetRequestStream()
+            requestStream.Write(data, 0, data.Length)
+            requestStream.Close()
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
+        End Try
+        Dim szResult As String = ""
+        Try
+            Using myResponse As HttpWebResponse = httpWebRequest.GetResponse()
+                If myResponse.ContentEncoding.ToLower().Contains("gzip") Then
+                    Using stream As Stream = New System.IO.Compression.GZipStream(myResponse.GetResponseStream, IO.Compression.CompressionMode.Decompress)
+                        Using reader As New StreamReader(stream)
+                            szResult = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                        stream.Close()
+                    End Using
+                Else
+                    Using stream As Stream = httpWebRequest.GetResponse().GetResponseStream()
+                        Using reader As New StreamReader(stream)
+                            szResult = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                        stream.Close()
+                    End Using
+                End If
+            End Using
+            Dim i As Integer
+            Dim jsons As JObject = JObject.Parse(szResult)
+            If jsons.SelectToken("code").ToString <> "0" Then
+                Return jsons.SelectToken("code").ToString
+            End If
+            Dim n = jsons.SelectToken("data").SelectToken("items").Count
+            For i = 0 To n - 1
+                szResult = szResult + vbNewLine + jsons.SelectToken("data").SelectToken("items(" & i & ").itemstring").ToString
+            Next
+            Return szResult
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
+        End Try
+        Return szResult
+    End Function
+    Public Shared Function HmacSha1Sign(ByVal appId As Long, ByVal secretId As String, ByVal secretKey As String, ByVal bucketName As String, ByVal expired As Long) As String
+        Dim now As Long = (DateTime.Now - New DateTime(1970, 1, 1)).TotalMilliseconds / 1000
+        Dim rdm As Integer = DateTime.Now.ToString("yyMMddHHmm")
+        Dim hmacsha1 = New HMACSHA1(Encoding.UTF8.GetBytes(secretKey))
+        Dim plainText As String = "a=" & appId & "&b=" & bucketName & "&k=" & secretId & "&e=" & now + expired & "&t=" & now & "&r=" & rdm & "&u=0&f="
+        Dim dataBuffer = Encoding.UTF8.GetBytes(plainText)
+        Dim hashBytes = hmacsha1.ComputeHash(dataBuffer)
+        Dim bytes As List(Of Byte) = New List(Of Byte)()
+        bytes.AddRange(hashBytes)
+        bytes.AddRange(dataBuffer)
+        Return Convert.ToBase64String(bytes.ToArray())
+    End Function
+    Public Function TecentOcrLocal(image As Image, path As String) As String
+        Dim Authorization = HmacSha1Sign(Tencent_APPID, Tencent_SecretId, Tencent_SecretKey, "bucket-01", 2592000)
+        Dim boundary As String = "--------------" & DateTime.Now.Ticks.ToString("x")
+        Dim header As String = vbNewLine & "--" & boundary & vbNewLine & "Content-Disposition:form-data;name=""appid"";" & vbNewLine & vbNewLine & "1256493063" & vbNewLine
+        header = header + "--" & boundary & vbNewLine & "Content-Disposition:form-data;name=""bucket"";" & vbNewLine & vbNewLine & "bucket-01" & vbNewLine
+        header = header + "--" & boundary & vbNewLine & "Content-Disposition:form-data;name=""image""; filename=""" & path & """" & vbNewLine & "Content-Type: image/jpeg" & vbNewLine & vbNewLine
+        Dim footer As String = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + vbNewLine + boundary + "--" & vbNewLine
+        Dim fileStream = New FileStream(path, FileMode.Open, FileAccess.Read)
+        Dim array = New Byte(fileStream.Length - 1) {}
+        fileStream.Read(array, 0, CInt(fileStream.Length))
+        fileStream.Close()
+        Dim Data() = MergeByte(Encoding.ASCII.GetBytes(header), array, Encoding.ASCII.GetBytes(footer))
+        Dim httpWebRequest As HttpWebRequest = WebRequest.Create(“https://recognition.image.myqcloud.com/ocr/general”)
+        httpWebRequest.Method = "POST"
+        httpWebRequest.ContentType = "multipart/form-data; boundary=" & boundary
+        httpWebRequest.Headers.Add(HttpRequestHeader.Authorization, Authorization)
+        httpWebRequest.ContentLength = Data.Length
+        Dim requestStream = httpWebRequest.GetRequestStream()
+        requestStream.Write(Data, 0, Data.Length)
+        requestStream.Close()
+        Dim result As String = ""
+        Try
+            Using myResponse As HttpWebResponse = httpWebRequest.GetResponse()
+                If myResponse.ContentEncoding.ToLower().Contains("gzip") Then
+                    Using stream As Stream = New System.IO.Compression.GZipStream(myResponse.GetResponseStream, IO.Compression.CompressionMode.Decompress)
+                        Using reader As New StreamReader(stream)
+                            result = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                        stream.Close()
+                    End Using
+                Else
+                    Using stream As Stream = httpWebRequest.GetResponse().GetResponseStream()
+                        Using reader As New StreamReader(stream)
+                            result = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                        stream.Close()
+                    End Using
+                End If
+            End Using
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
+        End Try
+        Return result
+
+    End Function
+    Public Shared Function MergeByte(ByVal a As Byte(), ByVal b As Byte(), ByVal c As Byte()) As Byte()
+        Dim array = New Byte(a.Length + b.Length + c.Length - 1) {}
+        a.CopyTo(array, 0)
+        b.CopyTo(array, a.Length)
+        c.CopyTo(array, a.Length + b.Length)
+        Return array
+    End Function
+
+    Public Shared Function FreeOcrApi(image_url As String) As String
+        Dim szRes As String = ""
+        Dim Cookie = New CookieContainer()
+        Dim boundary As String = "------WebKitFormBoundaryRDEqU0w702X9cWPJ"
+        Dim refer As String = "http://ai.qq.com/product/ocr.shtml"
+        Dim url = "https://ai.qq.com/cgi-bin/appdemo_generalocr"
+        Dim header = boundary + vbNewLine & "Content-Disposition: form-data; name=image_file; filename=pic.jpg" & vbNewLine & "Content-Type: image/jpeg" & vbNewLine & vbNewLine
+        Dim footer As String = vbNewLine + boundary + "--" & vbNewLine
+        Dim Data = MergeByte(Encoding.ASCII.GetBytes(header), urlimageTobyte(image_url), Encoding.ASCII.GetBytes(footer))
+
+        Dim httpWebRequest As HttpWebRequest = WebRequest.Create(url)
+        httpWebRequest.Method = "POST"
+        httpWebRequest.CookieContainer = Cookie
+        httpWebRequest.Timeout = 10000
+        httpWebRequest.Referer = refer
+        httpWebRequest.ContentType = "multipart/form-data; boundary=" + boundary.Substring(2)
+        httpWebRequest.Accept = "*/*"
+        'httpWebRequest.Headers.Add("Accept-Encoding: gzip,deflate")
+        httpWebRequest.UserAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+        httpWebRequest.ServicePoint.Expect100Continue = False
+        httpWebRequest.ProtocolVersion = New Version(1, 1)
+        httpWebRequest.ContentLength = Data.Length
+        Dim requestStream = httpWebRequest.GetRequestStream()
+        requestStream.Write(Data, 0, Data.Length)
+        requestStream.Close()
+        Dim result As String = ""
+
+        Try
+            Using myResponse As HttpWebResponse = httpWebRequest.GetResponse()
+                If myResponse.ContentEncoding.ToLower().Contains("gzip") Then
+                    Using stream As Stream = New System.IO.Compression.GZipStream(myResponse.GetResponseStream, IO.Compression.CompressionMode.Decompress)
+                        Using reader As New StreamReader(stream)
+                            result = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                    End Using
+                Else
+                    Using stream As Stream = httpWebRequest.GetResponse().GetResponseStream()
+                        Using reader As New StreamReader(stream)
+                            result = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                    End Using
+                End If
+            End Using
+            Dim DicObj As Dictionary(Of String, Object) = New JavaScriptSerializer().Deserialize(Of Dictionary(Of String, Object))(result)
+            If DicObj("msg").ToString = "ok" Then
+                Dim n As Integer = DirectCast(DicObj("data")("item_list"), ArrayList).Count
+                For i = 0 To n - 1
+                    szRes = szRes + vbNewLine + DicObj("data")("item_list")(i)("itemstring").ToString
+                Next
+            Else
+                Return DicObj("msg").ToString
+            End If
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
+        End Try
+        Return szRes
+    End Function
+    Public Shared Function urlimageTobyte(ByVal url As String) As Byte()
+        Dim bytedata As Byte() = Nothing
+        Dim httpWebRequest As HttpWebRequest = DirectCast(WebRequest.Create(url), HttpWebRequest)
+        httpWebRequest.Method = "GET"
+        Try
+            Using httpWebResponse As HttpWebResponse = httpWebRequest.GetResponse()
+                If httpWebResponse.StatusCode = 200 Then
+                    Using stream As Stream = httpWebRequest.GetResponse().GetResponseStream()
+                        Dim memoryStream = New MemoryStream()
+                        stream.CopyTo(memoryStream)
+                        Dim array = New Byte(memoryStream.Length - 1) {}
+                        memoryStream.Position = 0L
+                        memoryStream.Read(array, 0, CInt(memoryStream.Length))
+                        memoryStream.Close()
+                        bytedata = array
+                    End Using
+                End If
+            End Using
+        Catch ex As Exception
+        End Try
+        Return bytedata
+    End Function
 End Class

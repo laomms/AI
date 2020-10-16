@@ -50,6 +50,89 @@ Public Class BaiduAPI
         End Try
         Return szResult
     End Function
+
+    Public Shared Function BaiduOCR2(imageUrl As String) As String
+        Dim encoding As New UTF8Encoding
+        Dim szUrl1 = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=ytyPgel3i1IbvTZp5AIEDQjN&client_secret=rfjtVxgGm8TRKutn7kXLU6AB6undZrlH"
+        Dim szToken = GetBaiduToken(szUrl1)
+        Dim szUrl2 = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=" & szToken
+        '本地或者网络
+        'Dim szBase64 = Convert.ToBase64String(System.IO.File.ReadAllBytes(picpath))
+        'Dim PostData As String = HttpUtility.UrlEncode(szBase64)
+        'Dim Data As Byte() = encoding.GetBytes("image=" & PostData & "&language_type=CHN_ENG")
+        Dim Data As Byte() = encoding.GetBytes("url=" & imageUrl)
+        Dim httpWebRequest As HttpWebRequest = WebRequest.Create(szUrl2)
+        httpWebRequest.Method = "POST"
+        httpWebRequest.Timeout = 10000
+        httpWebRequest.Accept = "*/*"
+        httpWebRequest.ContentType = "application/x-www-form-urlencoded; charset=UTF-8"
+        httpWebRequest.ServicePoint.Expect100Continue = True
+        httpWebRequest.ProtocolVersion = New Version(1, 1)
+        httpWebRequest.ContentLength = Data.Length
+        Dim requestStream = httpWebRequest.GetRequestStream()
+        requestStream.Write(Data, 0, Data.Length)
+        requestStream.Close()
+        Dim result As String = ""
+        Dim szRes As String = ""
+        Try
+            Using myResponse As HttpWebResponse = httpWebRequest.GetResponse()
+                If myResponse.ContentEncoding.ToLower().Contains("gzip") Then
+                    Using stream As Stream = New System.IO.Compression.GZipStream(myResponse.GetResponseStream, IO.Compression.CompressionMode.Decompress)
+                        Using reader As New StreamReader(stream)
+                            result = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                        stream.Close()
+                    End Using
+                Else
+                    Using stream As Stream = httpWebRequest.GetResponse().GetResponseStream()
+                        Using reader As New StreamReader(stream)
+                            result = reader.ReadToEnd()
+                            reader.Close()
+                        End Using
+                        stream.Close()
+                    End Using
+                End If
+            End Using
+            Dim jsons As Object = New JavaScriptSerializer().Deserialize(Of Object)(result)
+            Dim n = CInt(jsons("words_result_num"))
+            For i As Integer = 0 To n - 1
+                szRes = szRes + vbNewLine + jsons("words_result")(i)("words").ToString
+            Next
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
+        End Try
+
+        Return szRes
+    End Function
+    Public Shared Function GetBaiduToken(url As String) As String
+        Dim szToken As String = ""
+        Dim szRequest As HttpWebRequest = WebRequest.Create(url)
+        szRequest.Method = "POST"
+        Try
+            Using myResponse As HttpWebResponse = szRequest.GetResponse()
+                Using stream As Stream = szRequest.GetResponse().GetResponseStream()
+                    Using szReader As New StreamReader(stream)
+                        Dim szResult = szReader.ReadToEnd()
+                        Dim jsons As Object = New JavaScriptSerializer().DeserializeObject(szResult)
+                        szToken = jsons("access_token")
+                        szReader.Close()
+                    End Using
+                End Using
+            End Using
+        Catch ex As Exception
+            If Not ex.InnerException Is Nothing Then
+                Return "调用失败: " + ex.GetBaseException.Message.ToString
+            Else
+                Return "调用失败: " + ex.Message.ToString
+            End If
+        End Try
+        Return szToken
+    End Function
     Public Shared Function BaiduTranslation(ByVal szText As String, languageFrom As String, languageTo As String) As String
         Dim appId As String = Baidu_APP_ID
         Dim password As String = Baidu_APP_KEY

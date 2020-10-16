@@ -54,7 +54,7 @@ Module Main
                 For Each match As Match In matches
                     Dim imageUrl As String = Marshal.PtrToStringAnsi(API.GetImageDownloadLink(plugin_key, match.Value, sMsg.ThisQQ, sMsg.MessageGroupQQ))
                     'Dim ret = BaiduAPI.BaiduOCR(imageUrl)
-                    Dim ret = TencentAPI.TencentOcr(imageUrl)
+                    Dim ret = TencentAPI.FreeOcrApi(imageUrl)
                     API.SendGroupMsg(Pinvoke.plugin_key, sMsg.ThisQQ, sMsg.MessageGroupQQ, "图片内容: " + vbNewLine + ret + vbNewLine, False)
                 Next
             ElseIf sMsg.MessageContent.Contains("翻译英文") Then
