@@ -53,7 +53,7 @@ Public Class BaiduAPI
 
     Public Shared Function BaiduOCR2(imageUrl As String) As String
         Dim encoding As New UTF8Encoding
-        Dim szUrl1 = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=ytyPgel3i1IbvTZp5AIEDQjN&client_secret=rfjtVxgGm8TRKutn7kXLU6AB6undZrlH"
+        Dim szUrl1 = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=" + Baidu_APPKEY + "&client_secret=" + Baidu_SecretKey
         Dim szToken = GetBaiduToken(szUrl1)
         Dim szUrl2 = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=" & szToken
         '本地或者网络

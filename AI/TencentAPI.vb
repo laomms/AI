@@ -624,7 +624,7 @@ Public Class TencentAPI
         Return array
     End Function
 
-    Public Shared Function FreeOcrApi(image_url As String) As String
+    Public Shared Function FreeOcrApi(image_url As String) As String   '免费识图接口,稳定性不好
         Dim szRes As String = ""
         Dim Cookie = New CookieContainer()
         Dim boundary As String = "------WebKitFormBoundaryRDEqU0w702X9cWPJ"
