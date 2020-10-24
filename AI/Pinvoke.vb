@@ -7,7 +7,7 @@ Public Module Pinvoke
 #Region "全局变量"
     Public jsonstr, plugin_key As String
     Public PluginStatus As Boolean
-    Public RobotQQ As String
+    'Public RobotQQ As String
     Public Baidu_APPID As String
     Public Baidu_APPKEY As String
     Public Baidu_SecretKey As String
