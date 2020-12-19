@@ -11,7 +11,7 @@ Imports System.Windows.Forms
 Public Class API
 
 #Region "导出函数给框架并取到两个参数值"
-    <DllExport(CallingConvention:=System.Runtime.InteropServices.CallingConvention.StdCall)>
+    <DllExport(CallingConvention:=CallingConvention.StdCall)>
     Public Shared Function apprun(<MarshalAs(UnmanagedType.LPStr)> ByVal apidata As String, <MarshalAs(UnmanagedType.LPStr)> ByVal pluginkey As String) As IntPtr
         jsonstr = apidata
         plugin_key = pluginkey
@@ -37,7 +37,7 @@ Public Class API
 
         Dim App_Info = New AppInfo()
         App_Info.data = New JavaScriptSerializer().Deserialize(Of Object)(resultJson)
-        App_Info.sdkv = "2.7.5"
+        App_Info.sdkv = "2.8.7.5"
         App_Info.appname = "AI"
         App_Info.author = "网中行"
         App_Info.describe = "BAT AI插件"
@@ -60,15 +60,29 @@ Public Class API
         Return Marshal.StringToHGlobalAnsi(jsonstring)
     End Function
     Public Shared Function AddPermission(ByVal desc As String, ByVal json As String) As String
-        Dim Permission = New MyData With {
+        Dim jsonstring = ""
+        Dim SensitivePermissions As String = "QQ点赞|获取clientkey|获取pskey|获取skey|解散群|删除好友|退群|置屏蔽好友|修改个性签名|修改昵称|上传头像|框架重启|取QQ钱包个人信息|更改群聊消息内容|更改私聊消息内容"
+        If SensitivePermissions.Contains(desc) Then
+            Dim Permission = New MyData With {
+            .PermissionList = New Needapilist With {
+                .state = "0",
+                .safe = "0",
+                .desc = desc
+                }
+            }
+            Dim serializer As New JavaScriptSerializer()
+            jsonstring = serializer.Serialize(Permission).Replace("PermissionList", desc)
+        Else
+            Dim Permission = New MyData With {
             .PermissionList = New Needapilist With {
                 .state = "1",
                 .safe = "1",
                 .desc = desc
-            }
-        }
-        Dim serializer As New JavaScriptSerializer()
-        Dim jsonstring = serializer.Serialize(Permission).Replace("PermissionList", desc)
+                }
+             }
+            Dim serializer As New JavaScriptSerializer()
+            jsonstring = serializer.Serialize(Permission).Replace("PermissionList", desc)
+        End If
         If json = "" Then Return jsonstring Else Return (json + jsonstring).Replace("}{", ",")
     End Function
 #End Region
@@ -414,6 +428,60 @@ Public Class API
         Return Nothing
     End Function
 #End Region
+#Region "取群成员简略信息"
+    Public Shared Function GetGroupMemberBriefInfoEvent(ByVal thisQQ As Long, ByVal GroupQQ As Long) As GroupMemberBriefInfo
+        Dim gMBriefDataLists(1) As GMBriefDataList
+        Dim ret As String = Marshal.PtrToStringAnsi(GetGroupMemberBriefInfo(plugin_key, thisQQ, GroupQQ, gMBriefDataLists))
+        Dim adminList As AdminListDataList = CType(Marshal.PtrToStructure(gMBriefDataLists(0).groupMemberBriefInfo.AdminiList, GetType(AdminListDataList)), AdminListDataList)
+        Dim groupMemberBriefInfo As New GroupMemberBriefInfo()
+        groupMemberBriefInfo.GroupMAax = gMBriefDataLists(0).groupMemberBriefInfo.GroupMAax
+        groupMemberBriefInfo.GroupOwner = gMBriefDataLists(0).groupMemberBriefInfo.GroupOwner
+        groupMemberBriefInfo.GruoupNum = gMBriefDataLists(0).groupMemberBriefInfo.GruoupNum
+        Return groupMemberBriefInfo
+    End Function
+#End Region
+#Region "取QQ钱包个人信息"
+    Public Shared Function GetQQWalletPersonalInformationEvent(ByVal thisQQ As Long) As String
+        Dim ptr = Marshal.AllocHGlobal(4)
+        Dim CardInfo As New CardInformation()
+        Marshal.StructureToPtr(CardInfo, ptr, False)
+        Dim ptrCardList(0) As CardListIntptr
+        ptrCardList(0).addr = ptr
+
+        Dim QQWalletInfo As New QQWalletInformation()
+        QQWalletInfo.Balance = ""
+        QQWalletInfo.RealName = ""
+        QQWalletInfo.ID = ""
+        QQWalletInfo.CardList = ptrCardList
+
+        Dim QQWallet(0) As QQWalletDataList
+        QQWallet(0).QQWalletInfo = QQWalletInfo
+
+        Dim ret As New IntPtr()
+
+        Try
+            ret = GetQQWalletPersonalInfo(plugin_key, thisQQ, QQWallet)
+            Marshal.FreeHGlobal(ptr)
+        Catch ex As Exception
+
+        End Try
+
+        Dim DataList As DataArray = Marshal.PtrToStructure(QQWallet(0).QQWalletInfo.cardlist(0).addr, GetType(DataArray))
+        Dim list As New List(Of CardInformation)()
+        If DataList.Amount > 0 Then
+            Dim pAddrBytes() As Byte = DataList.pAddrList
+            For i As Integer = 0 To DataList.Amount - 1
+                Dim readByte(3) As Byte
+                Array.Copy(pAddrBytes, i * 4, readByte, 0, readByte.Length)
+                Dim StuctPtr As New IntPtr(BitConverter.ToInt32(readByte, 0))
+                Dim info As CardInformation = Marshal.PtrToStructure(StuctPtr, GetType(CardInformation))
+                list.Add(info)
+            Next
+        End If
+        'Return retQQWalletInformation
+        Return Marshal.PtrToStringAnsi(ret)
+    End Function
+#End Region
 #Region "全局异常"
     Private Shared Sub Application_ThreadException(ByVal sender As Object, ByVal e As System.Threading.ThreadExceptionEventArgs)
         Dim ex As Exception = e.Exception
@@ -506,6 +574,24 @@ Public Class API
         Dim ShareMusicAPI As ShareMusicDelegate = CType(Marshal.GetDelegateForFunctionPointer(New IntPtr(CInt(json("分享音乐"))), GetType(ShareMusicDelegate)), ShareMusicDelegate)
         ShareMusic = ShareMusicAPI
         GC.KeepAlive(ShareMusic)
+        Dim GetQQWalletPersonalInformationAPI As GetQQWalletPersonalInformation = CType(Marshal.GetDelegateForFunctionPointer(New IntPtr(CInt(json("取QQ钱包个人信息"))), GetType(GetQQWalletPersonalInformation)), GetQQWalletPersonalInformation)
+        GetQQWalletPersonalInfo = GetQQWalletPersonalInformationAPI
+        GC.KeepAlive(GetQQWalletPersonalInfo)
+        Dim GetMoneyCookieAPI As GetMoneyCookieDelegate = CType(Marshal.GetDelegateForFunctionPointer(New IntPtr(CInt(json("取钱包cookie"))), GetType(GetMoneyCookieDelegate)), GetMoneyCookieDelegate)
+        GetMoneyCookie = GetMoneyCookieAPI
+        GC.KeepAlive(GetMoneyCookie)
+        Dim GetClientKeyAPI As GetClientKeyDelegate = CType(Marshal.GetDelegateForFunctionPointer(New IntPtr(CInt(json("获取clientkey"))), GetType(GetClientKeyDelegate)), GetClientKeyDelegate)
+        GetClientKey = GetClientKeyAPI
+        GC.KeepAlive(GetClientKey)
+        Dim GetPSKeyAPI As GetPSKeyDelegate = CType(Marshal.GetDelegateForFunctionPointer(New IntPtr(CInt(json("获取pskey"))), GetType(GetPSKeyDelegate)), GetPSKeyDelegate)
+        GetPSKey = GetPSKeyAPI
+        GC.KeepAlive(GetPSKey)
+        Dim GetSKeyAPI As GetSKeyDelegate = CType(Marshal.GetDelegateForFunctionPointer(New IntPtr(CInt(json("获取skey"))), GetType(GetSKeyDelegate)), GetSKeyDelegate)
+        GetSKey = GetSKeyAPI
+        GC.KeepAlive(GetSKey)
+        Dim GetGroupMemberBriefInfoAPI As GetGroupMemberBriefInfoDelegate = CType(Marshal.GetDelegateForFunctionPointer(New IntPtr(CInt(json("取群成员简略信息"))), GetType(GetGroupMemberBriefInfoDelegate)), GetGroupMemberBriefInfoDelegate)
+        GetGroupMemberBriefInfo = GetGroupMemberBriefInfoAPI
+        GC.KeepAlive(GetGroupMemberBriefInfo)
     End Sub
 #End Region
 #Region "函数委托指针"
@@ -618,7 +704,7 @@ Public Class API
     '分享音乐
     Public Shared ShareMusic As ShareMusicDelegate = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
-    Public Delegate Function ShareMusicDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal otherQQ As Long, <MarshalAs(UnmanagedType.LPStr)> ByVal music_name As String, <MarshalAs(UnmanagedType.LPStr)> ByVal artist_name As String, <MarshalAs(UnmanagedType.LPStr)> ByVal redirect_link As String, <MarshalAs(UnmanagedType.LPStr)> ByVal cover_link As String, <MarshalAs(UnmanagedType.LPStr)> ByVal file_path As String, ByVal app_type As Integer, ByVal share_type As Integer) As Boolean
+    Public Delegate Function ShareMusicDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal otherQQ As Long, <MarshalAs(UnmanagedType.LPStr)> ByVal music_name As String, <MarshalAs(UnmanagedType.LPStr)> ByVal artist_name As String, <MarshalAs(UnmanagedType.LPStr)> ByVal redirect_link As String, <MarshalAs(UnmanagedType.LPStr)> ByVal cover_link As String, <MarshalAs(UnmanagedType.LPStr)> ByVal file_path As String, ByVal app_type As MusicAppTypeEnum, ByVal share_type As MusicShare_Type) As Boolean
     '更改群聊消息内容
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
     Public Delegate Function ModifyGroupMessageContent(ByVal pkey As String, <MarshalAs(UnmanagedType.SysInt)> ByVal data_pointer As Integer, <MarshalAs(UnmanagedType.LPStr)> ByVal new_message_content As String) As Boolean
@@ -638,11 +724,17 @@ Public Class API
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
     Public Delegate Function GetPluginDataDirectory(ByVal pkey As String) As IntPtr
     ' 获取ClientKey
+    Public Shared GetClientKey As GetClientKeyDelegate = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
-    Public Delegate Function GetClientKey(ByVal pkey As String, ByVal thisQQ As Long) As IntPtr
+    Public Delegate Function GetClientKeyDelegate(ByVal pkey As String, ByVal thisQQ As Long) As IntPtr
     ' 获取PSKey
+    Public Shared GetPSKey As GetPSKeyDelegate = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
-    Public Delegate Function GetPSKey(ByVal pkey As String, ByVal thisQQ As Long, <MarshalAs(UnmanagedType.LPStr)> ByVal domain As String) As IntPtr
+    Public Delegate Function GetPSKeyDelegate(ByVal pkey As String, ByVal thisQQ As Long, <MarshalAs(UnmanagedType.LPStr)> ByVal domain As String) As IntPtr
+    ' 获取SKey
+    Public Shared GetSKey As GetSKeyDelegate = Nothing
+    <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
+    Public Delegate Function GetSKeyDelegate(ByVal pkey As String, ByVal thisQQ As Long) As IntPtr
     ' 获取订单信息
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
     Public Delegate Function GetOrderDetail(ByVal pkey As String, ByVal thisQQ As Long, <MarshalAs(UnmanagedType.LPStr)> ByVal orderID As String, ByRef data() As OrderDetaildDataList) As IntPtr
@@ -653,8 +745,13 @@ Public Class API
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
     Public Delegate Function GetNameForce(ByVal pkey As String, ByVal thisQQ As Long, ByVal otherQQ As Long) As IntPtr
     ' 取QQ钱包个人信息
+    Public Shared GetQQWalletPersonalInfo As GetQQWalletPersonalInformation = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
-    Public Delegate Function GetQQWalletPersonalInformation(ByVal pkey As String, ByVal thisQQ As Long, ByRef qQWalletInfoDataLists() As QQWalletInfoDataList) As IntPtr
+    Public Delegate Function GetQQWalletPersonalInformation(ByVal pkey As String, ByVal thisQQ As Long, ByRef qQWalletInfoDataLists() As QQWalletDataList) As IntPtr
+    ' 取钱包cookie
+    Public Shared GetMoneyCookie As GetMoneyCookieDelegate = Nothing
+    <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
+    Public Delegate Function GetMoneyCookieDelegate(ByVal pkey As String, ByVal thisQQ As Long) As IntPtr
     ' 从缓存获取昵称
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
     Public Delegate Function GetNameFromCache(ByVal pkey As String, ByVal otherQQ As Long) As IntPtr
@@ -711,7 +808,7 @@ Public Class API
     ' 上传群语音
     Public Shared UploadGroupAudio As UploadGroupAudioDelegate = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
-    Public Delegate Function UploadGroupAudioDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal groupQQ As Long, ByVal audio_type As Integer, <MarshalAs(UnmanagedType.LPStr)> ByVal audio_text As String, <MarshalAs(UnmanagedType.LPArray)> ByVal audio() As Byte, ByVal audiosize As Integer) As IntPtr
+    Public Delegate Function UploadGroupAudioDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal friendQQ As Long, ByVal audio_type As Integer, <MarshalAs(UnmanagedType.LPStr)> ByVal audio_text As String, <MarshalAs(UnmanagedType.LPArray)> ByVal audio() As Byte, ByVal audiosize As Integer) As IntPtr
     ' 保存文件到微云
     Public Shared SaveFileToWeiYun As SaveFileToWeiYunDelegate = Nothing
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
@@ -815,9 +912,13 @@ Public Class API
     ' 置群内消息通知
     <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
     Public Delegate Function GroupNoticeMethod(ByVal pkey As String, ByVal thisQQ As Long, ByVal GroupQQ As Long, ByVal otherQQ As Long, ByVal metohd As Integer) As Boolean
-    ' 修改群名称
-    Public Delegate Function GetGroupMemberBriefInfo(ByVal pkey As String, ByVal thisQQ As Long, ByVal GroupQQ As Long, ByRef gMBriefDataLists() As GMBriefDataList) As IntPtr
-    Public Delegate Function UpdataGroupName(ByVal pkey As String, ByVal thisQQ As Long, ByVal GroupQQ As Long, <MarshalAs(UnmanagedType.LPStr)> ByVal NewGroupName As String) As Boolean
+    '取群成员简略信息
+    Public Shared GetGroupMemberBriefInfo As GetGroupMemberBriefInfoDelegate = Nothing
+    <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
+    Public Delegate Function GetGroupMemberBriefInfoDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal GroupQQ As Long, ByRef gMBriefDataLists() As GMBriefDataList) As IntPtr
+    '修改群名称
+    <UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet:=CharSet.Ansi)>
+    Public Delegate Function UpdataGroupNameDelegate(ByVal pkey As String, ByVal thisQQ As Long, ByVal GroupQQ As Long, <MarshalAs(UnmanagedType.LPStr)> ByVal NewGroupName As String) As Boolean
 
 #End Region
 

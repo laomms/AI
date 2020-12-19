@@ -21,6 +21,49 @@ Public Module Pinvoke
     Public IniFilePath = Environment.CurrentDirectory + "\main\data\config\AI.ini"
 #End Region
 
+#Region "Pointer结构"
+    Public Structure Pointer(Of T As Structure)
+        Private Shared TypeSize As Integer = Marshal.SizeOf(Of T)
+        Private ptr As IntPtr
+        Public Sub New(obj As T)
+            Throw New Exception("Cannot get pointer of .Net object")
+        End Sub
+        Default Public Property Value(idx As IntPtr) As T
+            Get
+                Return Marshal.PtrToStructure(Of T)(ptr + CLng(idx) * TypeSize)
+            End Get
+            Set(value As T)
+                Marshal.StructureToPtr(Of T)(value, ptr + CLng(idx) * TypeSize, False)
+            End Set
+        End Property
+        Public Property Target As T
+            Get
+                Return Value(0)
+            End Get
+            Set(value As T)
+                Me.Value(0) = value
+            End Set
+        End Property
+        Public Function ToPointer() As IntPtr
+            Return ptr
+        End Function
+        Public Shared Narrowing Operator CType(this As Pointer(Of T)) As T
+            Return this(0)
+        End Operator
+        Public Shared Operator +(this As Pointer(Of T), that As Integer) As Pointer(Of T)
+            Return this.ptr + that * TypeSize
+        End Operator
+        Public Shared Operator -(this As Pointer(Of T), that As Integer) As Pointer(Of T)
+            Return this.ptr - that * TypeSize
+        End Operator
+        Public Shared Narrowing Operator CType(this As Pointer(Of T)) As IntPtr
+            Return this.ptr
+        End Operator
+        Public Shared Widening Operator CType(this As IntPtr) As Pointer(Of T)
+            Return New Pointer(Of T)() With {.ptr = this}
+        End Operator
+    End Structure
+#End Region
 
 #Region "结构体"
     <StructLayout(LayoutKind.Sequential, CharSet:=CharSet.Ansi, Pack:=1)>
@@ -136,6 +179,75 @@ Public Module Pinvoke
         <MarshalAs(UnmanagedType.ByValArray, SizeConst:=1024)>
         Public pAddrList() As Byte
     End Structure
+
+    <StructLayout(LayoutKind.Sequential, Pack:=1)>
+    Public Structure QQWalletDataList
+        Public QQWalletInfo As QQWalletInformation
+    End Structure
+
+    <StructLayout(LayoutKind.Sequential, Pack:=1)>
+    Public Structure QQWalletInformation
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public balance As String ' 余额
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public id As String ' 身份证号
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public realname As String  ' 实名
+        <MarshalAs(UnmanagedType.ByValArray, SizeConst:=1)>
+        Public cardlist() As CardListIntptr
+    End Structure
+    <StructLayout(LayoutKind.Sequential, Pack:=1)>
+    Public Structure CardListIntptr
+        Public addr As IntPtr '数组指针
+    End Structure
+
+
+    <StructLayout(LayoutKind.Sequential, Pack:=1)>
+    Public Structure CardInformation
+        Public Serial As Integer ' 序列
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public TailNumber As String  ' 尾号
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public Bank As String ' 银行
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public BindPhone As String ' 绑定手机
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public BindSerial As String
+        <MarshalAs(UnmanagedType.LPStr)>
+        Public BankType As String  ' bank_type
+    End Structure
+
+    '''   <summary>
+    '''  结构体转byte数组
+    '''   </summary>
+    '''   <param name="structObj"> 要转换的结构体 </param>
+    '''   <returns> 转换后的byte数组 </returns>
+    Public Function StructToBytes(ByVal structObj As Object) As Byte()
+        Dim size As Integer = Marshal.SizeOf(structObj)  ' 得到结构体的大小
+        Dim bytes(size - 1) As Byte ' 创建byte数组
+        Dim structPtr As IntPtr = Marshal.AllocHGlobal(size)  ' 分配结构体大小的内存空间
+        Marshal.StructureToPtr(structObj, structPtr, False) ' 将结构体拷到分配好的内存空间
+        Marshal.Copy(structPtr, bytes, 0, size)  '从内存空间拷到byte数组
+        Marshal.FreeHGlobal(structPtr)  ' 释放内存空间
+        Return bytes
+    End Function
+    '''   <summary>
+    '''  byte数组转结构体
+    '''   </summary>
+    '''   <param name="bytes"> byte数组 </param>
+    '''   <param name="type"> 结构体类型 </param>
+    '''   <returns> 转换后的结构体 </returns>
+    Public Function BytesToStuct(ByVal bytes() As Byte, ByVal type As Type) As Object
+        Dim size As Integer = Marshal.SizeOf(type)  ' 得到结构体的大小
+        If size > bytes.Length Then ' byte数组长度小于结构体的大小
+            Return Nothing
+        End If
+        Dim structPtr As IntPtr = Marshal.AllocHGlobal(size) ' 分配结构体大小的内存空间
+        Marshal.Copy(bytes, 0, structPtr, size) ' 将byte数组拷到分配好的内存空间
+        Dim obj As Object = Marshal.PtrToStructure(structPtr, type) ' 将内存空间转换为目标结构体
+        Marshal.FreeHGlobal(structPtr) ' 释放内存空间
+        Return obj
+    End Function
     <StructLayout(LayoutKind.Sequential, CharSet:=CharSet.Ansi, Pack:=1)>
     Public Structure FriendInfo
         <MarshalAs(UnmanagedType.LPStr)>
@@ -289,67 +401,7 @@ Public Module Pinvoke
         <MarshalAs(UnmanagedType.LPStr)>
         Public OperateAmount As String
     End Structure
-    <StructLayout(LayoutKind.Sequential, Pack:=1)>
-    Public Structure QQWalletInfoDataList
-        Public qQWalletInformation As QQWalletInformation
-    End Structure
 
-    <StructLayout(LayoutKind.Sequential, Pack:=1)>
-    Public Structure QQWalletInformation
-        ' 余额
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public Balance As String
-        ' 身份证号
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public ID As String
-        ' 实名
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public RealName As String
-        ' 银行卡列表
-        Public CardList() As CardInfoDataList
-    End Structure
-    <StructLayout(LayoutKind.Sequential, Pack:=1)>
-    Public Structure CardInfoDataList
-        Public index As Integer '数组索引
-        Public Amount As Integer '数组元素数量
-        <MarshalAs(UnmanagedType.ByValArray, SizeConst:=100)>
-        Public pAddrList() As Byte '每个元素的指针
-    End Structure
-
-    <StructLayout(LayoutKind.Sequential, Pack:=1)>
-    Public Structure CardInformation
-        ' 序列
-        Public Serial As Integer
-        ' 尾号
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public TailNumber As String
-        ' 银行
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public Bank As String
-        ' 绑定手机
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public BindPhone As String
-        ' bind_serial
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public BindSerial As String
-        ' bank_type
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public BankType As String
-    End Structure
-    <StructLayout(LayoutKind.Sequential, Pack:=1)>
-    Public Structure RetQQWalletInformation
-        ' 余额
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public Balance As String
-        ' 身份证号
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public ID As String
-        ' 实名
-        <MarshalAs(UnmanagedType.LPStr)>
-        Public RealName As String
-        ' 银行卡列表
-        Public CardList As List(Of CardInformation)
-    End Structure
     <StructLayout(LayoutKind.Sequential, Pack:=1)>
     Public Structure RedEnvelopesDataList
         'public int index;
@@ -964,4 +1016,7 @@ Public Module Pinvoke
         Return $"[AudioFile,path={path}]"
     End Function
 
+    <DllImport("kernel32.dll")>
+    Public Sub RtlZeroMemory(ByVal dst As IntPtr, ByVal length As UIntPtr)
+    End Sub
 End Module
